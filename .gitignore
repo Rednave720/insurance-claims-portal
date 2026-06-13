@@ -1,0 +1,10 @@
+.DS_Store
+docs/.DS_Store
+
+# Build output
+target/
+backend/target/
+
+# IDE settings
+.idea/
+.vscode/
