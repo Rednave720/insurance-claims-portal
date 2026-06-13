@@ -10,7 +10,6 @@ import {
   Container,
   Divider,
   FormControl,
-  Grid,
   InputLabel,
   MenuItem,
   Paper,
@@ -258,8 +257,14 @@ function App() {
       </AppBar>
 
       <Container maxWidth="xl" sx={{ py: 3 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={3}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: '220px 1fr' },
+            gap: 3,
+          }}
+        >
+          <Box>
             <Paper variant="outlined" sx={{ p: 1 }}>
               <Stack spacing={1}>
                 {visibleNav.map((item) => (
@@ -276,9 +281,9 @@ function App() {
                 ))}
               </Stack>
             </Paper>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} md={9}>
+          <Box>
             <Stack spacing={3}>
               <ScreenHeader activeScreen={activeScreen} role={role} />
               {error && <Alert severity="error">{error}</Alert>}
@@ -314,8 +319,8 @@ function App() {
                 </>
               )}
             </Stack>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </Container>
     </Box>
   )
@@ -324,7 +329,7 @@ function App() {
 function ScreenHeader({ activeScreen, role }) {
   return (
     <Paper variant="outlined" sx={{ p: 3 }}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'center' } }}>
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="h4" component="h2">{activeScreen}</Typography>
           <Typography color="text.secondary">
@@ -342,7 +347,7 @@ function ScreenHeader({ activeScreen, role }) {
 function LoadingState({ message }) {
   return (
     <Paper variant="outlined" sx={{ p: 4 }}>
-      <Stack direction="row" spacing={2} alignItems="center">
+      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
         <CircularProgress size={24} />
         <Typography>{message}</Typography>
       </Stack>
@@ -394,7 +399,7 @@ function SubmitClaimScreen({ onSubmitClaim, submitting }) {
             type="date"
             value={incidentDate}
             onChange={(event) => setIncidentDate(event.target.value)}
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
         </Stack>
         <TextField
@@ -439,12 +444,18 @@ function ClaimDetailsScreen({ claim, history, loading }) {
   }
 
   return (
-    <Grid container spacing={3}>
-      <Grid item xs={12} md={7}>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 7fr) minmax(280px, 5fr)' },
+        gap: 3,
+      }}
+    >
+      <Box>
         <Card variant="outlined">
           <CardContent>
             <Stack spacing={2}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Stack direction="row" justifyContent="space-between" sx={{ alignItems: 'center' }}>
                 <Typography variant="h6">{claim.claimNumber}</Typography>
                 <Chip label={statusLabels[claim.status]} color={statusColors[claim.status]} />
               </Stack>
@@ -456,8 +467,8 @@ function ClaimDetailsScreen({ claim, history, loading }) {
             </Stack>
           </CardContent>
         </Card>
-      </Grid>
-      <Grid item xs={12} md={5}>
+      </Box>
+      <Box>
         <Card variant="outlined">
           <CardContent>
             <Stack spacing={2}>
@@ -467,8 +478,8 @@ function ClaimDetailsScreen({ claim, history, loading }) {
             </Stack>
           </CardContent>
         </Card>
-      </Grid>
-    </Grid>
+      </Box>
+    </Box>
   )
 }
 
@@ -483,18 +494,24 @@ function AdminDashboardScreen({ summary }) {
   ]
 
   return (
-    <Grid container spacing={2}>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+        gap: 2,
+      }}
+    >
       {metrics.map(([label, value]) => (
-        <Grid item xs={12} sm={6} md={4} key={label}>
+        <Box key={label}>
           <Card variant="outlined">
             <CardContent>
               <Typography color="text.secondary">{label}</Typography>
               <Typography variant="h4">{value}</Typography>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
       ))}
-    </Grid>
+    </Box>
   )
 }
 
@@ -562,7 +579,7 @@ function AdminClaimDetailScreen({ claim, history, loading, onUpdateStatus, submi
   return (
     <Paper variant="outlined" sx={{ p: 3 }} component="form" onSubmit={handleSubmit}>
       <Stack spacing={3}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
+        <Stack direction="row" justifyContent="space-between" sx={{ alignItems: 'center' }}>
           <Box>
             <Typography variant="h6">{claim.claimNumber}</Typography>
             <Typography color="text.secondary">
