@@ -50,6 +50,7 @@ const navByRole = {
 const statusColors = {
   SUBMITTED: 'info',
   UNDER_REVIEW: 'warning',
+  NEEDS_INFO: 'warning',
   APPROVED: 'success',
   DENIED: 'error',
   CLOSED: 'default',
@@ -58,10 +59,20 @@ const statusColors = {
 const statusLabels = {
   SUBMITTED: 'Submitted',
   UNDER_REVIEW: 'Under Review',
+  NEEDS_INFO: 'Needs Info',
   APPROVED: 'Approved',
   DENIED: 'Denied',
   CLOSED: 'Closed',
 }
+
+const statusOptions = [
+  'SUBMITTED',
+  'UNDER_REVIEW',
+  'NEEDS_INFO',
+  'APPROVED',
+  'DENIED',
+  'CLOSED',
+]
 
 function App() {
   const [role, setRole] = useState('CLAIMANT')
@@ -123,45 +134,33 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  useEffect(() => {
-    if (!selectedClaimId) {
+  const loadSelectedClaimDetails = async (claimId) => {
+    if (!claimId) {
       setSelectedClaim(null)
       setClaimHistory([])
       return
     }
 
-    let ignore = false
+    setDetailsLoading(true)
+    setError('')
 
-    async function loadClaimDetails() {
-      setDetailsLoading(true)
-      setError('')
+    try {
+      const [claimData, historyData] = await Promise.all([
+        getClaimById(claimId),
+        getClaimHistory(claimId),
+      ])
 
-      try {
-        const [claimData, historyData] = await Promise.all([
-          getClaimById(selectedClaimId),
-          getClaimHistory(selectedClaimId),
-        ])
-
-        if (!ignore) {
-          setSelectedClaim(claimData)
-          setClaimHistory(historyData)
-        }
-      } catch (requestError) {
-        if (!ignore) {
-          setError(requestError.message)
-        }
-      } finally {
-        if (!ignore) {
-          setDetailsLoading(false)
-        }
-      }
+      setSelectedClaim(claimData)
+      setClaimHistory(historyData)
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setDetailsLoading(false)
     }
+  }
 
-    loadClaimDetails()
-
-    return () => {
-      ignore = true
-    }
+  useEffect(() => {
+    loadSelectedClaimDetails(selectedClaimId)
   }, [selectedClaimId])
 
   const changeRole = (nextRole) => {
@@ -214,7 +213,7 @@ function App() {
 
     try {
       const updatedClaim = await updateClaimStatus(selectedClaim.id, {
-        adminUserId: adminUser.id,
+        changedBy: adminUser.id,
         newStatus: statusUpdate.newStatus,
         note: statusUpdate.note,
       })
@@ -222,6 +221,7 @@ function App() {
       setSuccessMessage(`Claim ${updatedClaim.claimNumber} was updated to ${statusLabels[updatedClaim.status]}.`)
       setSelectedClaimId(updatedClaim.id)
       await loadOverviewData(updatedClaim.id)
+      await loadSelectedClaimDetails(updatedClaim.id)
     } catch (requestError) {
       setError(requestError.message)
     } finally {
@@ -558,7 +558,7 @@ function AdminClaimDetailScreen({ claim, history, loading, onUpdateStatus, submi
 
   useEffect(() => {
     if (claim) {
-      setNewStatus(claim.status === 'SUBMITTED' ? 'UNDER_REVIEW' : claim.status)
+      setNewStatus(getDefaultNextStatus(claim.status))
       setNote('')
     }
   }, [claim])
@@ -576,20 +576,56 @@ function AdminClaimDetailScreen({ claim, history, loading, onUpdateStatus, submi
     onUpdateStatus({ newStatus, note })
   }
 
+  const noteRequired = newStatus === 'NEEDS_INFO' || newStatus === 'DENIED'
+  const isSameStatus = newStatus === claim.status
+  const isClosed = claim.status === 'CLOSED'
+  const isSubmittedRollback = newStatus === 'SUBMITTED' && claim.status !== 'SUBMITTED'
+  const isMissingRequiredNote = noteRequired && note.trim().length === 0
+  const updateDisabled = submitting || isClosed || isSameStatus || isSubmittedRollback || isMissingRequiredNote
+
   return (
     <Paper variant="outlined" sx={{ p: 3 }} component="form" onSubmit={handleSubmit}>
       <Stack spacing={3}>
-        <Stack direction="row" justifyContent="space-between" sx={{ alignItems: 'center' }}>
-          <Box>
-            <Typography variant="h6">{claim.claimNumber}</Typography>
-            <Typography color="text.secondary">
-              {claim.claimantName} · {claim.claimType} · {claim.incidentDate}
-            </Typography>
-          </Box>
-          <Chip label={statusLabels[claim.status]} color={statusColors[claim.status]} />
-        </Stack>
-        <Typography>{claim.description}</Typography>
-        <FormControl fullWidth>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) 280px' },
+            gap: 3,
+          }}
+        >
+          <Stack spacing={2}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" sx={{ gap: 2 }}>
+              <Box>
+                <Typography variant="h6">{claim.claimNumber}</Typography>
+                <Typography color="text.secondary">
+                  {claim.claimantName} · {claim.claimType} · {claim.incidentDate}
+                </Typography>
+              </Box>
+              <Chip label={statusLabels[claim.status]} color={statusColors[claim.status]} sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }} />
+            </Stack>
+            <Typography>{claim.description}</Typography>
+          </Stack>
+
+          <Card variant="outlined">
+            <CardContent>
+              <Typography variant="overline" color="text.secondary">Current Status</Typography>
+              <Stack spacing={1}>
+                <Chip label={statusLabels[claim.status]} color={statusColors[claim.status]} />
+                <Typography variant="body2" color="text.secondary">
+                  Status updates create a claim history entry for traceability.
+                </Typography>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Box>
+
+        <Divider />
+
+        {isClosed && (
+          <Alert severity="info">This claim is closed. Further status updates are intentionally disabled for the MVP.</Alert>
+        )}
+
+        <FormControl fullWidth disabled={isClosed}>
           <InputLabel id="status-label">New status</InputLabel>
           <Select
             labelId="status-label"
@@ -597,24 +633,34 @@ function AdminClaimDetailScreen({ claim, history, loading, onUpdateStatus, submi
             value={newStatus}
             onChange={(event) => setNewStatus(event.target.value)}
           >
-            <MenuItem value="UNDER_REVIEW">Under Review</MenuItem>
-            <MenuItem value="APPROVED">Approved</MenuItem>
-            <MenuItem value="DENIED">Denied</MenuItem>
-            <MenuItem value="CLOSED">Closed</MenuItem>
+            {statusOptions.map((status) => (
+              <MenuItem
+                key={status}
+                value={status}
+                disabled={status === claim.status || (status === 'SUBMITTED' && claim.status !== 'SUBMITTED')}
+              >
+                {statusLabels[status]}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
         <TextField
+          required={noteRequired}
           multiline
           minRows={4}
           label="Reviewer note"
           value={note}
           onChange={(event) => setNote(event.target.value)}
           placeholder="Add a short reason for this status update."
+          error={isMissingRequiredNote}
+          helperText={noteRequired ? 'A reviewer note is required for Needs Info and Denied updates.' : 'Optional note for internal claim history.'}
+          disabled={isClosed}
         />
-        <Button type="submit" variant="contained" startIcon={<FactCheckIcon />} disabled={submitting}>
+        <Button type="submit" variant="contained" startIcon={<FactCheckIcon />} disabled={updateDisabled}>
           {submitting ? 'Updating...' : 'Update Status'}
         </Button>
         <Divider />
+        <Typography variant="h6">Claim History</Typography>
         <HistoryList history={history} />
       </Stack>
     </Paper>
@@ -623,24 +669,44 @@ function AdminClaimDetailScreen({ claim, history, loading, onUpdateStatus, submi
 
 function HistoryList({ history }) {
   if (history.length === 0) {
-    return <Typography color="text.secondary">No history events yet.</Typography>
+    return <EmptyState title="No history yet" message="Status updates will appear here as the claim moves through review." />
   }
 
   return (
     <Stack spacing={1}>
       {history.map((event) => (
-        <Paper key={event.id} variant="outlined" sx={{ p: 2 }}>
-          <Typography variant="body2" fontWeight={700}>
-            {statusLabels[event.newStatus] || event.newStatus}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {event.changedBy} · {new Date(event.createdAt).toLocaleString()}
-          </Typography>
-          {event.note && <Typography variant="body2">{event.note}</Typography>}
+        <Paper key={event.id} variant="outlined" sx={{ p: 2, borderLeft: 4, borderLeftColor: 'primary.main' }}>
+          <Stack spacing={1}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
+              {event.previousStatus && (
+                <>
+                  <Chip size="small" label={statusLabels[event.previousStatus] || event.previousStatus} color={statusColors[event.previousStatus]} variant="outlined" />
+                  <Typography variant="body2" color="text.secondary">to</Typography>
+                </>
+              )}
+              <Chip size="small" label={statusLabels[event.newStatus] || event.newStatus} color={statusColors[event.newStatus]} />
+            </Stack>
+            <Typography variant="body2" color="text.secondary">
+              {event.changedBy} · {new Date(event.createdAt).toLocaleString()}
+            </Typography>
+            {event.note && <Typography variant="body2">{event.note}</Typography>}
+          </Stack>
         </Paper>
       ))}
     </Stack>
   )
+}
+
+function getDefaultNextStatus(currentStatus) {
+  if (currentStatus === 'SUBMITTED') {
+    return 'UNDER_REVIEW'
+  }
+
+  if (currentStatus === 'CLOSED') {
+    return 'CLOSED'
+  }
+
+  return currentStatus
 }
 
 function ClaimsTable({ admin, claims, emptyTitle, emptyMessage, onOpenClaim }) {

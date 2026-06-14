@@ -79,6 +79,7 @@ Represents the current workflow state of a claim.
 | --- | --- |
 | `SUBMITTED` | Claim has been submitted by the claimant |
 | `UNDER_REVIEW` | Admin is reviewing the claim |
+| `NEEDS_INFO` | Admin needs more information before making a decision |
 | `APPROVED` | Claim has been approved |
 | `DENIED` | Claim has been denied |
 | `CLOSED` | Claim workflow is complete |

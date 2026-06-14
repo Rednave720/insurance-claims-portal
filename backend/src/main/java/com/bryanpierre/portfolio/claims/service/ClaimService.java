@@ -6,6 +6,8 @@ import com.bryanpierre.portfolio.claims.entity.Claim;
 import com.bryanpierre.portfolio.claims.entity.ClaimHistory;
 import com.bryanpierre.portfolio.claims.entity.User;
 import com.bryanpierre.portfolio.claims.enums.ClaimStatus;
+import com.bryanpierre.portfolio.claims.enums.UserRole;
+import com.bryanpierre.portfolio.claims.exception.BadRequestException;
 import com.bryanpierre.portfolio.claims.repository.ClaimHistoryRepository;
 import com.bryanpierre.portfolio.claims.repository.ClaimRepository;
 import com.bryanpierre.portfolio.claims.repository.UserRepository;
@@ -74,8 +76,33 @@ public class ClaimService {
     @Transactional
     public Claim updateClaimStatus(Long claimId, UpdateClaimStatusRequest request) {
         Claim claim = getClaimById(claimId);
-        User admin = userRepository.findById(request.getAdminUserId())
-                .orElseThrow(() -> new IllegalArgumentException("Admin user not found: " + request.getAdminUserId()));
+        Long reviewerUserId = request.getReviewerUserId();
+        if (reviewerUserId == null) {
+            throw new BadRequestException("Reviewer user id is required.");
+        }
+
+        User admin = userRepository.findById(reviewerUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Admin user not found: " + reviewerUserId));
+
+        if (admin.getRole() != UserRole.ADMIN) {
+            throw new BadRequestException("Only an admin reviewer can update claim status.");
+        }
+
+        if (claim.getStatus() == ClaimStatus.CLOSED) {
+            throw new BadRequestException("Closed claims cannot be updated in the MVP workflow.");
+        }
+
+        if (claim.getStatus() == request.getNewStatus()) {
+            throw new BadRequestException("New status must be different from the current status.");
+        }
+
+        if (request.getNewStatus() == ClaimStatus.SUBMITTED) {
+            throw new BadRequestException("Claims cannot be moved back to submitted after review begins.");
+        }
+
+        if (requiresReviewerNote(request.getNewStatus()) && isBlank(request.getNote())) {
+            throw new BadRequestException("A reviewer note is required for this status update.");
+        }
 
         ClaimStatus previousStatus = claim.getStatus();
         claim.setStatus(request.getNewStatus());
@@ -96,5 +123,13 @@ public class ClaimService {
     private String generateClaimNumber() {
         long nextNumber = claimRepository.count() + 1001;
         return "CLM-" + nextNumber;
+    }
+
+    private boolean requiresReviewerNote(ClaimStatus status) {
+        return status == ClaimStatus.NEEDS_INFO || status == ClaimStatus.DENIED;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

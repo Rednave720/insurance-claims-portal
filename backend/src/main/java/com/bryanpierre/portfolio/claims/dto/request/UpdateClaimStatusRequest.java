@@ -5,8 +5,9 @@ import jakarta.validation.constraints.NotNull;
 
 public class UpdateClaimStatusRequest {
 
-    @NotNull
     private Long adminUserId;
+
+    private Long changedBy;
 
     @NotNull
     private ClaimStatus newStatus;
@@ -19,6 +20,18 @@ public class UpdateClaimStatusRequest {
 
     public void setAdminUserId(Long adminUserId) {
         this.adminUserId = adminUserId;
+    }
+
+    public Long getChangedBy() {
+        return changedBy;
+    }
+
+    public void setChangedBy(Long changedBy) {
+        this.changedBy = changedBy;
+    }
+
+    public Long getReviewerUserId() {
+        return adminUserId != null ? adminUserId : changedBy;
     }
 
     public ClaimStatus getNewStatus() {

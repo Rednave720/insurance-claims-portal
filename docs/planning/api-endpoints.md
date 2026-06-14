@@ -184,9 +184,9 @@ Documents and history can be returned from separate endpoints to keep the respon
 
 ```json
 {
-  "adminUserId": 2,
-  "newStatus": "UNDER_REVIEW",
-  "note": "Initial review started. Waiting for supporting repair estimate."
+  "changedBy": 2,
+  "newStatus": "NEEDS_INFO",
+  "note": "Additional repair estimate needed before a final decision."
 }
 ```
 
@@ -207,6 +207,7 @@ Documents and history can be returned from separate endpoints to keep the respon
 - Only admins should update status
 - Each status update should create a `ClaimHistory` entry
 - Do not overbuild workflow rules yet
+- The backend also accepts `adminUserId` for compatibility with the first MVP implementation
 
 ## Documents
 
