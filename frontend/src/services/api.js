@@ -53,6 +53,13 @@ export function getClaimDocuments(claimId) {
   return request(`/api/claims/${claimId}/documents`)
 }
 
+export function addClaimDocument(claimId, documentMetadata) {
+  return request(`/api/claims/${claimId}/documents`, {
+    method: 'POST',
+    body: JSON.stringify(documentMetadata),
+  })
+}
+
 export function getDashboardSummary() {
   return request('/api/dashboard/summary')
 }

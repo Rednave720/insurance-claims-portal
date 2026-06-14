@@ -27,14 +27,17 @@ import {
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import DescriptionIcon from '@mui/icons-material/Description'
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile'
 import FactCheckIcon from '@mui/icons-material/FactCheck'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import SearchIcon from '@mui/icons-material/Search'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
 import { useEffect, useMemo, useState } from 'react'
 import {
+  addClaimDocument,
   createClaim,
   getClaimById,
+  getClaimDocuments,
   getClaimHistory,
   getClaims,
   getDashboardSummary,
@@ -83,6 +86,7 @@ function App() {
   const [selectedClaimId, setSelectedClaimId] = useState(null)
   const [selectedClaim, setSelectedClaim] = useState(null)
   const [claimHistory, setClaimHistory] = useState([])
+  const [claimDocuments, setClaimDocuments] = useState([])
   const [loading, setLoading] = useState(true)
   const [detailsLoading, setDetailsLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -138,6 +142,7 @@ function App() {
     if (!claimId) {
       setSelectedClaim(null)
       setClaimHistory([])
+      setClaimDocuments([])
       return
     }
 
@@ -145,13 +150,15 @@ function App() {
     setError('')
 
     try {
-      const [claimData, historyData] = await Promise.all([
+      const [claimData, historyData, documentsData] = await Promise.all([
         getClaimById(claimId),
         getClaimHistory(claimId),
+        getClaimDocuments(claimId),
       ])
 
       setSelectedClaim(claimData)
       setClaimHistory(historyData)
+      setClaimDocuments(documentsData)
     } catch (requestError) {
       setError(requestError.message)
     } finally {
@@ -229,6 +236,32 @@ function App() {
     }
   }
 
+  const handleAddDocument = async (documentMetadata) => {
+    if (!selectedClaim || !claimantUser) {
+      return
+    }
+
+    setSubmitting(true)
+    setError('')
+    setSuccessMessage('')
+
+    try {
+      await addClaimDocument(selectedClaim.id, {
+        uploadedByUserId: claimantUser.id,
+        fileName: documentMetadata.fileName,
+        documentType: documentMetadata.documentType,
+        fileUrl: documentMetadata.fileUrl,
+      })
+
+      setSuccessMessage('Document metadata was added to the claim.')
+      await loadSelectedClaimDetails(selectedClaim.id)
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f6f8fb' }}>
       <AppBar position="static" color="inherit" elevation={0} sx={{ borderBottom: '1px solid #dde3ea' }}>
@@ -299,7 +332,14 @@ function App() {
                     <MyClaimsScreen claims={claimantClaims} onOpenClaim={handleOpenClaim} />
                   )}
                   {activeScreen === 'Claim Details' && (
-                    <ClaimDetailsScreen claim={selectedClaim} history={claimHistory} loading={detailsLoading} />
+                    <ClaimDetailsScreen
+                      claim={selectedClaim}
+                      history={claimHistory}
+                      documents={claimDocuments}
+                      loading={detailsLoading}
+                      onAddDocument={handleAddDocument}
+                      submitting={submitting}
+                    />
                   )}
                   {activeScreen === 'Admin Dashboard' && (
                     <AdminDashboardScreen summary={dashboardSummary} />
@@ -311,6 +351,7 @@ function App() {
                     <AdminClaimDetailScreen
                       claim={selectedClaim}
                       history={claimHistory}
+                      documents={claimDocuments}
                       loading={detailsLoading}
                       onUpdateStatus={handleUpdateStatus}
                       submitting={submitting}
@@ -434,7 +475,7 @@ function MyClaimsScreen({ claims, onOpenClaim }) {
   )
 }
 
-function ClaimDetailsScreen({ claim, history, loading }) {
+function ClaimDetailsScreen({ claim, history, documents, loading, onAddDocument, submitting }) {
   if (loading) {
     return <LoadingState message="Loading claim details..." />
   }
@@ -455,7 +496,7 @@ function ClaimDetailsScreen({ claim, history, loading }) {
         <Card variant="outlined">
           <CardContent>
             <Stack spacing={2}>
-              <Stack direction="row" justifyContent="space-between" sx={{ alignItems: 'center' }}>
+              <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="h6">{claim.claimNumber}</Typography>
                 <Chip label={statusLabels[claim.status]} color={statusColors[claim.status]} />
               </Stack>
@@ -472,8 +513,11 @@ function ClaimDetailsScreen({ claim, history, loading }) {
         <Card variant="outlined">
           <CardContent>
             <Stack spacing={2}>
-              <Typography variant="h6">Documents & History</Typography>
-              <Button variant="outlined" startIcon={<UploadFileIcon />}>Add Document Metadata</Button>
+              <Typography variant="h6">Supporting Documents</Typography>
+              <DocumentMetadataForm onAddDocument={onAddDocument} submitting={submitting} />
+              <DocumentList documents={documents} />
+              <Divider />
+              <Typography variant="h6">Claim History</Typography>
               <HistoryList history={history} />
             </Stack>
           </CardContent>
@@ -552,7 +596,7 @@ function ClaimsReviewTableScreen({ claims, onOpenClaim }) {
   )
 }
 
-function AdminClaimDetailScreen({ claim, history, loading, onUpdateStatus, submitting }) {
+function AdminClaimDetailScreen({ claim, history, documents, loading, onUpdateStatus, submitting }) {
   const [newStatus, setNewStatus] = useState('UNDER_REVIEW')
   const [note, setNote] = useState('')
 
@@ -594,7 +638,7 @@ function AdminClaimDetailScreen({ claim, history, loading, onUpdateStatus, submi
           }}
         >
           <Stack spacing={2}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" sx={{ gap: 2 }}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ gap: 2, justifyContent: 'space-between' }}>
               <Box>
                 <Typography variant="h6">{claim.claimNumber}</Typography>
                 <Typography color="text.secondary">
@@ -660,10 +704,105 @@ function AdminClaimDetailScreen({ claim, history, loading, onUpdateStatus, submi
           {submitting ? 'Updating...' : 'Update Status'}
         </Button>
         <Divider />
+        <Typography variant="h6">Supporting Documents</Typography>
+        <DocumentList documents={documents} />
+        <Divider />
         <Typography variant="h6">Claim History</Typography>
         <HistoryList history={history} />
       </Stack>
     </Paper>
+  )
+}
+
+function DocumentMetadataForm({ onAddDocument, submitting }) {
+  const [fileName, setFileName] = useState('')
+  const [documentType, setDocumentType] = useState('PHOTO')
+  const [fileUrl, setFileUrl] = useState('https://example.com/mock-claim-document')
+
+  const handleSubmit = (event) => {
+    event.preventDefault()
+    onAddDocument({ fileName, documentType, fileUrl })
+    setFileName('')
+    setDocumentType('PHOTO')
+    setFileUrl('https://example.com/mock-claim-document')
+  }
+
+  return (
+    <Paper variant="outlined" sx={{ p: 2 }} component="form" onSubmit={handleSubmit}>
+      <Stack spacing={2}>
+        <TextField
+          required
+          size="small"
+          label="Document name"
+          value={fileName}
+          onChange={(event) => setFileName(event.target.value)}
+          placeholder="repair-estimate.pdf"
+        />
+        <FormControl fullWidth size="small" required>
+          <InputLabel id="document-type-label">Document type</InputLabel>
+          <Select
+            labelId="document-type-label"
+            label="Document type"
+            value={documentType}
+            onChange={(event) => setDocumentType(event.target.value)}
+          >
+            <MenuItem value="PHOTO">Photo</MenuItem>
+            <MenuItem value="RECEIPT">Receipt</MenuItem>
+            <MenuItem value="REPAIR_ESTIMATE">Repair Estimate</MenuItem>
+            <MenuItem value="POLICE_REPORT">Police Report</MenuItem>
+            <MenuItem value="OTHER">Other</MenuItem>
+          </Select>
+        </FormControl>
+        <TextField
+          required
+          size="small"
+          label="Mock file URL"
+          value={fileUrl}
+          onChange={(event) => setFileUrl(event.target.value)}
+          helperText="Metadata only. No real file upload yet."
+        />
+        <Box>
+          <Button type="submit" variant="outlined" startIcon={<UploadFileIcon />} disabled={submitting}>
+            {submitting ? 'Adding...' : 'Add Metadata'}
+          </Button>
+        </Box>
+      </Stack>
+    </Paper>
+  )
+}
+
+function DocumentList({ documents }) {
+  if (documents.length === 0) {
+    return (
+      <EmptyState
+        title="No documents yet"
+        message="Supporting documents will appear here as metadata records. Real file upload is intentionally out of scope for this MVP."
+      />
+    )
+  }
+
+  return (
+    <Stack spacing={1}>
+      {documents.map((document) => (
+        <Paper key={document.id} variant="outlined" sx={{ p: 2 }}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'center' } }}>
+            <InsertDriveFileIcon color="primary" />
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography fontWeight={700}>{document.fileName}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Uploaded {new Date(document.uploadedAt).toLocaleString()}
+              </Typography>
+              {document.fileUrl && (
+                <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
+                  {document.fileUrl}
+                </Typography>
+              )}
+            </Box>
+            <Chip size="small" label={formatDocumentType(document.documentType)} variant="outlined" />
+          </Stack>
+        </Paper>
+      ))}
+    </Stack>
   )
 }
 
@@ -707,6 +846,13 @@ function getDefaultNextStatus(currentStatus) {
   }
 
   return currentStatus
+}
+
+function formatDocumentType(documentType) {
+  return documentType
+    .split('_')
+    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+    .join(' ')
 }
 
 function ClaimsTable({ admin, claims, emptyTitle, emptyMessage, onOpenClaim }) {
