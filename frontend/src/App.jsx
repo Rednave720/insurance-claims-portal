@@ -10,6 +10,7 @@ import {
   Container,
   Divider,
   FormControl,
+  InputAdornment,
   InputLabel,
   MenuItem,
   Paper,
@@ -18,6 +19,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -25,6 +27,7 @@ import {
   Typography,
 } from '@mui/material'
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import DescriptionIcon from '@mui/icons-material/Description'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile'
@@ -53,7 +56,7 @@ const navByRole = {
 const statusColors = {
   SUBMITTED: 'info',
   UNDER_REVIEW: 'warning',
-  NEEDS_INFO: 'warning',
+  NEEDS_INFO: 'secondary',
   APPROVED: 'success',
   DENIED: 'error',
   CLOSED: 'default',
@@ -66,6 +69,15 @@ const statusLabels = {
   APPROVED: 'Approved',
   DENIED: 'Denied',
   CLOSED: 'Closed',
+}
+
+const metricColors = {
+  'Total Claims': 'primary.main',
+  Submitted: 'info.main',
+  'Under Review': 'warning.main',
+  'Needs Info': 'secondary.main',
+  Approved: 'success.main',
+  Denied: 'error.main',
 }
 
 const statusOptions = [
@@ -342,7 +354,7 @@ function App() {
                     />
                   )}
                   {activeScreen === 'Admin Dashboard' && (
-                    <AdminDashboardScreen summary={dashboardSummary} />
+                    <AdminDashboardScreen summary={dashboardSummary} claims={claims} />
                   )}
                   {activeScreen === 'Claims Review Table' && (
                     <ClaimsReviewTableScreen claims={claims} onOpenClaim={handleOpenClaim} />
@@ -527,14 +539,15 @@ function ClaimDetailsScreen({ claim, history, documents, loading, onAddDocument,
   )
 }
 
-function AdminDashboardScreen({ summary }) {
+function AdminDashboardScreen({ summary, claims }) {
+  const needsInfoClaims = claims.filter((claim) => claim.status === 'NEEDS_INFO').length
   const metrics = [
     ['Total Claims', summary?.totalClaims ?? 0],
     ['Submitted', summary?.submittedClaims ?? 0],
     ['Under Review', summary?.underReviewClaims ?? 0],
+    ['Needs Info', needsInfoClaims],
     ['Approved', summary?.approvedClaims ?? 0],
     ['Denied', summary?.deniedClaims ?? 0],
-    ['Closed', summary?.closedClaims ?? 0],
   ]
 
   return (
@@ -547,10 +560,18 @@ function AdminDashboardScreen({ summary }) {
     >
       {metrics.map(([label, value]) => (
         <Box key={label}>
-          <Card variant="outlined">
-            <CardContent>
-              <Typography color="text.secondary">{label}</Typography>
-              <Typography variant="h4">{value}</Typography>
+          <Card
+            variant="outlined"
+            sx={{
+              height: '100%',
+              bgcolor: '#ffffff',
+              borderTop: 4,
+              borderTopColor: metricColors[label] ?? 'primary.main',
+            }}
+          >
+            <CardContent sx={{ p: 2.5 }}>
+              <Typography variant="body2" color="text.secondary">{label}</Typography>
+              <Typography variant="h4" sx={{ mt: 0.5, fontWeight: 700 }}>{value}</Typography>
             </CardContent>
           </Card>
         </Box>
@@ -577,14 +598,24 @@ function ClaimsReviewTableScreen({ claims, onOpenClaim }) {
 
   return (
     <Stack spacing={2}>
-      <TextField
-        fullWidth
-        label="Search claims"
-        placeholder="Search by claim number, claimant, or status"
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1 }} /> }}
-      />
+      <Paper variant="outlined" sx={{ p: 2, bgcolor: '#ffffff' }}>
+        <TextField
+          fullWidth
+          label="Search claims"
+          placeholder="Search by claim number, claimant, or status"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+      </Paper>
       <ClaimsTable
         admin
         claims={filteredClaims}
@@ -861,22 +892,24 @@ function ClaimsTable({ admin, claims, emptyTitle, emptyMessage, onOpenClaim }) {
   }
 
   return (
-    <Paper variant="outlined">
+    <TableContainer component={Paper} variant="outlined" sx={{ bgcolor: '#ffffff' }}>
       <Table>
         <TableHead>
-          <TableRow>
-            <TableCell>Claim</TableCell>
-            {admin && <TableCell>Claimant</TableCell>}
-            <TableCell>Type</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell>Incident Date</TableCell>
-            <TableCell align="right">Action</TableCell>
+          <TableRow sx={{ bgcolor: '#f8fafc' }}>
+            <TableCell sx={{ fontWeight: 700 }}>Claim</TableCell>
+            {admin && <TableCell sx={{ fontWeight: 700 }}>Claimant</TableCell>}
+            <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>Incident Date</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700 }}>Action</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {claims.map((claim) => (
             <TableRow key={claim.id} hover>
-              <TableCell>{claim.claimNumber}</TableCell>
+              <TableCell>
+                <Typography fontWeight={700}>{claim.claimNumber}</Typography>
+              </TableCell>
               {admin && <TableCell>{claim.claimantName}</TableCell>}
               <TableCell>{claim.claimType}</TableCell>
               <TableCell>
@@ -884,13 +917,13 @@ function ClaimsTable({ admin, claims, emptyTitle, emptyMessage, onOpenClaim }) {
               </TableCell>
               <TableCell>{claim.incidentDate}</TableCell>
               <TableCell align="right">
-                <Button size="small" onClick={() => onOpenClaim(claim.id)}>Open</Button>
+                <Button size="small" variant="outlined" endIcon={<ChevronRightIcon />} onClick={() => onOpenClaim(claim.id)}>View</Button>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-    </Paper>
+    </TableContainer>
   )
 }
 
