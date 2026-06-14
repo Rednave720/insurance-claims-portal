@@ -26,6 +26,7 @@ import {
   Typography,
 } from '@mui/material'
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import DescriptionIcon from '@mui/icons-material/Description'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile'
@@ -54,7 +55,7 @@ const navByRole = {
 const statusColors = {
   SUBMITTED: 'info',
   UNDER_REVIEW: 'warning',
-  NEEDS_INFO: 'warning',
+  NEEDS_INFO: 'secondary',
   APPROVED: 'success',
   DENIED: 'error',
   CLOSED: 'default',
@@ -73,9 +74,9 @@ const metricColors = {
   'Total Claims': 'primary.main',
   Submitted: 'info.main',
   'Under Review': 'warning.main',
+  'Needs Info': 'secondary.main',
   Approved: 'success.main',
   Denied: 'error.main',
-  Closed: 'grey.500',
 }
 
 const statusOptions = [
@@ -551,9 +552,9 @@ function AdminDashboardScreen({ summary }) {
     ['Total Claims', summary?.totalClaims ?? 0],
     ['Submitted', summary?.submittedClaims ?? 0],
     ['Under Review', summary?.underReviewClaims ?? 0],
+    ['Needs Info', summary?.needsInfoClaims ?? 0],
     ['Approved', summary?.approvedClaims ?? 0],
     ['Denied', summary?.deniedClaims ?? 0],
-    ['Closed', summary?.closedClaims ?? 0],
   ]
 
   return (
@@ -922,12 +923,12 @@ function ClaimsTable({ admin, claims, emptyTitle, emptyMessage, onOpenClaim }) {
       <Table>
         <TableHead>
           <TableRow sx={{ bgcolor: '#f8fafc' }}>
-            <TableCell>Claim</TableCell>
-            {admin && <TableCell>Claimant</TableCell>}
-            <TableCell>Type</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell>Incident Date</TableCell>
-            <TableCell align="right">Action</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>Claim</TableCell>
+            {admin && <TableCell sx={{ fontWeight: 700 }}>Claimant</TableCell>}
+            <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>Incident Date</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700 }}>Action</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -943,7 +944,7 @@ function ClaimsTable({ admin, claims, emptyTitle, emptyMessage, onOpenClaim }) {
               </TableCell>
               <TableCell>{formatDate(claim.incidentDate)}</TableCell>
               <TableCell align="right">
-                <Button size="small" variant="outlined" onClick={() => onOpenClaim(claim.id)}>Open</Button>
+                <Button size="small" variant="outlined" endIcon={<ChevronRightIcon />} onClick={() => onOpenClaim(claim.id)}>View</Button>
               </TableCell>
             </TableRow>
           ))}

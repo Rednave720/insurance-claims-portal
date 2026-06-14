@@ -19,6 +19,7 @@ public class DashboardService {
                 claimRepository.count(),
                 claimRepository.countByStatus(ClaimStatus.SUBMITTED),
                 claimRepository.countByStatus(ClaimStatus.UNDER_REVIEW),
+                claimRepository.countByStatus(ClaimStatus.NEEDS_INFO),
                 claimRepository.countByStatus(ClaimStatus.APPROVED),
                 claimRepository.countByStatus(ClaimStatus.DENIED),
                 claimRepository.countByStatus(ClaimStatus.CLOSED)

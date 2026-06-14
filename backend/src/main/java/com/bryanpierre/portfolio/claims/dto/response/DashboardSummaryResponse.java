@@ -5,6 +5,7 @@ public class DashboardSummaryResponse {
     private final long totalClaims;
     private final long submittedClaims;
     private final long underReviewClaims;
+    private final long needsInfoClaims;
     private final long approvedClaims;
     private final long deniedClaims;
     private final long closedClaims;
@@ -13,6 +14,7 @@ public class DashboardSummaryResponse {
             long totalClaims,
             long submittedClaims,
             long underReviewClaims,
+            long needsInfoClaims,
             long approvedClaims,
             long deniedClaims,
             long closedClaims
@@ -20,6 +22,7 @@ public class DashboardSummaryResponse {
         this.totalClaims = totalClaims;
         this.submittedClaims = submittedClaims;
         this.underReviewClaims = underReviewClaims;
+        this.needsInfoClaims = needsInfoClaims;
         this.approvedClaims = approvedClaims;
         this.deniedClaims = deniedClaims;
         this.closedClaims = closedClaims;
@@ -35,6 +38,10 @@ public class DashboardSummaryResponse {
 
     public long getUnderReviewClaims() {
         return underReviewClaims;
+    }
+
+    public long getNeedsInfoClaims() {
+        return needsInfoClaims;
     }
 
     public long getApprovedClaims() {
