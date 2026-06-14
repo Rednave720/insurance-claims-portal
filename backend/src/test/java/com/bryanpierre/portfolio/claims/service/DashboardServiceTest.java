@@ -26,6 +26,7 @@ class DashboardServiceTest {
         when(claimRepository.count()).thenReturn(6L);
         when(claimRepository.countByStatus(ClaimStatus.SUBMITTED)).thenReturn(1L);
         when(claimRepository.countByStatus(ClaimStatus.UNDER_REVIEW)).thenReturn(2L);
+        when(claimRepository.countByStatus(ClaimStatus.NEEDS_INFO)).thenReturn(3L);
         when(claimRepository.countByStatus(ClaimStatus.APPROVED)).thenReturn(3L);
         when(claimRepository.countByStatus(ClaimStatus.DENIED)).thenReturn(4L);
         when(claimRepository.countByStatus(ClaimStatus.CLOSED)).thenReturn(5L);
@@ -35,6 +36,7 @@ class DashboardServiceTest {
         assertEquals(6L, summary.getTotalClaims());
         assertEquals(1L, summary.getSubmittedClaims());
         assertEquals(2L, summary.getUnderReviewClaims());
+        assertEquals(3L, summary.getNeedsInfoClaims());
         assertEquals(3L, summary.getApprovedClaims());
         assertEquals(4L, summary.getDeniedClaims());
         assertEquals(5L, summary.getClosedClaims());

@@ -18,6 +18,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -25,8 +26,10 @@ import {
   Typography,
 } from '@mui/material'
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import DescriptionIcon from '@mui/icons-material/Description'
+import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile'
 import FactCheckIcon from '@mui/icons-material/FactCheck'
 import RefreshIcon from '@mui/icons-material/Refresh'
@@ -53,7 +56,7 @@ const navByRole = {
 const statusColors = {
   SUBMITTED: 'info',
   UNDER_REVIEW: 'warning',
-  NEEDS_INFO: 'warning',
+  NEEDS_INFO: 'secondary',
   APPROVED: 'success',
   DENIED: 'error',
   CLOSED: 'default',
@@ -76,6 +79,16 @@ const statusOptions = [
   'DENIED',
   'CLOSED',
 ]
+
+const metricColors = {
+  'Total Claims': 'grey.400',
+  Submitted: 'info.main',
+  'Under Review': 'warning.main',
+  'Needs Info': 'secondary.main',
+  Approved: 'success.main',
+  Denied: 'error.main',
+  Closed: 'grey.500',
+}
 
 function App() {
   const [role, setRole] = useState('CLAIMANT')
@@ -293,7 +306,7 @@ function App() {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: '220px 1fr' },
+            gridTemplateColumns: { xs: '1fr', md: '260px 1fr' },
             gap: 3,
           }}
         >
@@ -303,11 +316,12 @@ function App() {
                 {visibleNav.map((item) => (
                   <Button
                     key={item}
+                    disableRipple
                     fullWidth
                     variant={activeScreen === item ? 'contained' : 'text'}
                     onClick={() => setActiveScreen(item)}
                     startIcon={item.includes('Dashboard') ? <DashboardIcon /> : <DescriptionIcon />}
-                    sx={{ justifyContent: 'flex-start' }}
+                    sx={{ justifyContent: 'flex-start', whiteSpace: 'nowrap' }}
                   >
                     {item}
                   </Button>
@@ -398,9 +412,12 @@ function LoadingState({ message }) {
 
 function EmptyState({ title, message }) {
   return (
-    <Paper variant="outlined" sx={{ p: 4 }}>
-      <Typography variant="h6">{title}</Typography>
-      <Typography color="text.secondary">{message}</Typography>
+    <Paper variant="outlined" sx={{ p: 5, textAlign: 'center', bgcolor: 'grey.50' }}>
+      <InboxOutlinedIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+      <Typography variant="h6" gutterBottom>{title}</Typography>
+      <Typography color="text.secondary" sx={{ maxWidth: 420, mx: 'auto' }}>
+        {message}
+      </Typography>
     </Paper>
   )
 }
@@ -452,6 +469,7 @@ function SubmitClaimScreen({ onSubmitClaim, submitting }) {
           value={description}
           onChange={(event) => setDescription(event.target.value)}
           placeholder="Briefly describe what happened and any immediate details the claims team should know."
+          helperText="Aim for 1-3 sentences. The adjuster will follow up if more detail is needed."
         />
         <Box>
           <Button type="submit" variant="contained" startIcon={<AssignmentTurnedInIcon />} disabled={submitting}>
@@ -496,13 +514,15 @@ function ClaimDetailsScreen({ claim, history, documents, loading, onAddDocument,
         <Card variant="outlined">
           <CardContent>
             <Stack spacing={2}>
-              <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-                <Typography variant="h6">{claim.claimNumber}</Typography>
+              <Stack direction="row" sx={{ alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
+                <Box>
+                  <Typography variant="h6">{claim.claimNumber}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {formatClaimType(claim.claimType)} · Incident {formatDate(claim.incidentDate)} · Submitted {formatDate(claim.submittedAt)}
+                  </Typography>
+                </Box>
                 <Chip label={statusLabels[claim.status]} color={statusColors[claim.status]} />
               </Stack>
-              <Typography color="text.secondary">
-                {claim.claimType} claim submitted by {claim.claimantName}
-              </Typography>
               <Divider />
               <Typography>{claim.description}</Typography>
             </Stack>
@@ -532,6 +552,7 @@ function AdminDashboardScreen({ summary }) {
     ['Total Claims', summary?.totalClaims ?? 0],
     ['Submitted', summary?.submittedClaims ?? 0],
     ['Under Review', summary?.underReviewClaims ?? 0],
+    ['Needs Info', summary?.needsInfoClaims ?? 0],
     ['Approved', summary?.approvedClaims ?? 0],
     ['Denied', summary?.deniedClaims ?? 0],
     ['Closed', summary?.closedClaims ?? 0],
@@ -541,16 +562,16 @@ function AdminDashboardScreen({ summary }) {
     <Box
       sx={{
         display: 'grid',
-        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' },
         gap: 2,
       }}
     >
       {metrics.map(([label, value]) => (
         <Box key={label}>
-          <Card variant="outlined">
+          <Card variant="outlined" sx={{ height: '100%', borderTop: 4, borderTopColor: metricColors[label] ?? 'grey.300' }}>
             <CardContent>
-              <Typography color="text.secondary">{label}</Typography>
-              <Typography variant="h4">{value}</Typography>
+              <Typography variant="overline" color="text.secondary">{label}</Typography>
+              <Typography variant="h3" sx={{ fontWeight: 700, mt: 0.5 }}>{value}</Typography>
             </CardContent>
           </Card>
         </Box>
@@ -583,7 +604,7 @@ function ClaimsReviewTableScreen({ claims, onOpenClaim }) {
         placeholder="Search by claim number, claimant, or status"
         value={search}
         onChange={(event) => setSearch(event.target.value)}
-        InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1 }} /> }}
+        slotProps={{ input: { startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} /> } }}
       />
       <ClaimsTable
         admin
@@ -599,11 +620,13 @@ function ClaimsReviewTableScreen({ claims, onOpenClaim }) {
 function AdminClaimDetailScreen({ claim, history, documents, loading, onUpdateStatus, submitting }) {
   const [newStatus, setNewStatus] = useState('UNDER_REVIEW')
   const [note, setNote] = useState('')
+  const [noteTouched, setNoteTouched] = useState(false)
 
   useEffect(() => {
     if (claim) {
       setNewStatus(getDefaultNextStatus(claim.status))
       setNote('')
+      setNoteTouched(false)
     }
   }, [claim])
 
@@ -625,6 +648,7 @@ function AdminClaimDetailScreen({ claim, history, documents, loading, onUpdateSt
   const isClosed = claim.status === 'CLOSED'
   const isSubmittedRollback = newStatus === 'SUBMITTED' && claim.status !== 'SUBMITTED'
   const isMissingRequiredNote = noteRequired && note.trim().length === 0
+  const showMissingRequiredNote = isMissingRequiredNote && noteTouched
   const updateDisabled = submitting || isClosed || isSameStatus || isSubmittedRollback || isMissingRequiredNote
 
   return (
@@ -642,7 +666,7 @@ function AdminClaimDetailScreen({ claim, history, documents, loading, onUpdateSt
               <Box>
                 <Typography variant="h6">{claim.claimNumber}</Typography>
                 <Typography color="text.secondary">
-                  {claim.claimantName} · {claim.claimType} · {claim.incidentDate}
+                  {claim.claimantName} · {formatClaimType(claim.claimType)} · {formatDate(claim.incidentDate)}
                 </Typography>
               </Box>
               <Chip label={statusLabels[claim.status]} color={statusColors[claim.status]} sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }} />
@@ -652,12 +676,12 @@ function AdminClaimDetailScreen({ claim, history, documents, loading, onUpdateSt
 
           <Card variant="outlined">
             <CardContent>
-              <Typography variant="overline" color="text.secondary">Current Status</Typography>
-              <Stack spacing={1}>
-                <Chip label={statusLabels[claim.status]} color={statusColors[claim.status]} />
-                <Typography variant="body2" color="text.secondary">
-                  Status updates create a claim history entry for traceability.
-                </Typography>
+              <Typography variant="overline" color="text.secondary">Claim Meta</Typography>
+              <Stack spacing={1} sx={{ mt: 1 }}>
+                <MetaRow label="Status" value={<Chip size="small" label={statusLabels[claim.status]} color={statusColors[claim.status]} />} />
+                <MetaRow label="Submitted" value={formatDate(claim.submittedAt)} />
+                <MetaRow label="Last update" value={formatDate(claim.updatedAt)} />
+                <MetaRow label="Claimant" value={claim.claimantName} />
               </Stack>
             </CardContent>
           </Card>
@@ -675,7 +699,10 @@ function AdminClaimDetailScreen({ claim, history, documents, loading, onUpdateSt
             labelId="status-label"
             label="New status"
             value={newStatus}
-            onChange={(event) => setNewStatus(event.target.value)}
+            onChange={(event) => {
+              setNewStatus(event.target.value)
+              setNoteTouched(false)
+            }}
           >
             {statusOptions.map((status) => (
               <MenuItem
@@ -694,9 +721,15 @@ function AdminClaimDetailScreen({ claim, history, documents, loading, onUpdateSt
           minRows={4}
           label="Reviewer note"
           value={note}
-          onChange={(event) => setNote(event.target.value)}
+          onBlur={() => setNoteTouched(true)}
+          onChange={(event) => {
+            setNote(event.target.value)
+            if (event.target.value.trim().length > 0) {
+              setNoteTouched(true)
+            }
+          }}
           placeholder="Add a short reason for this status update."
-          error={isMissingRequiredNote}
+          error={showMissingRequiredNote}
           helperText={noteRequired ? 'A reviewer note is required for Needs Info and Denied updates.' : 'Optional note for internal claim history.'}
           disabled={isClosed}
         />
@@ -717,14 +750,14 @@ function AdminClaimDetailScreen({ claim, history, documents, loading, onUpdateSt
 function DocumentMetadataForm({ onAddDocument, submitting }) {
   const [fileName, setFileName] = useState('')
   const [documentType, setDocumentType] = useState('PHOTO')
-  const [fileUrl, setFileUrl] = useState('https://example.com/mock-claim-document')
+  const [fileUrl, setFileUrl] = useState('')
 
   const handleSubmit = (event) => {
     event.preventDefault()
     onAddDocument({ fileName, documentType, fileUrl })
     setFileName('')
     setDocumentType('PHOTO')
-    setFileUrl('https://example.com/mock-claim-document')
+    setFileUrl('')
   }
 
   return (
@@ -759,6 +792,7 @@ function DocumentMetadataForm({ onAddDocument, submitting }) {
           label="Mock file URL"
           value={fileUrl}
           onChange={(event) => setFileUrl(event.target.value)}
+          placeholder="https://example.com/mock-documents/repair-estimate.pdf"
           helperText="Metadata only. No real file upload yet."
         />
         <Box>
@@ -790,7 +824,7 @@ function DocumentList({ documents }) {
             <Box sx={{ flexGrow: 1 }}>
               <Typography fontWeight={700}>{document.fileName}</Typography>
               <Typography variant="body2" color="text.secondary">
-                Uploaded {new Date(document.uploadedAt).toLocaleString()}
+                Uploaded {formatDateTime(document.uploadedAt)}
               </Typography>
               {document.fileUrl && (
                 <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
@@ -826,7 +860,7 @@ function HistoryList({ history }) {
               <Chip size="small" label={statusLabels[event.newStatus] || event.newStatus} color={statusColors[event.newStatus]} />
             </Stack>
             <Typography variant="body2" color="text.secondary">
-              {event.changedBy} · {new Date(event.createdAt).toLocaleString()}
+              {event.changedBy} · {formatDateTime(event.createdAt)}
             </Typography>
             {event.note && <Typography variant="body2">{event.note}</Typography>}
           </Stack>
@@ -848,11 +882,46 @@ function getDefaultNextStatus(currentStatus) {
   return currentStatus
 }
 
+function MetaRow({ label, value }) {
+  return (
+    <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+      <Typography variant="body2" color="text.secondary">{label}</Typography>
+      <Box sx={{ fontWeight: 600, textAlign: 'right' }}>{value}</Box>
+    </Stack>
+  )
+}
+
 function formatDocumentType(documentType) {
   return documentType
     .split('_')
     .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
     .join(' ')
+}
+
+function formatClaimType(claimType) {
+  return claimType.charAt(0) + claimType.slice(1).toLowerCase()
+}
+
+function formatDate(dateValue) {
+  const normalizedDate = typeof dateValue === 'string' && dateValue.length === 10
+    ? `${dateValue}T00:00:00`
+    : dateValue
+
+  return new Date(normalizedDate).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+function formatDateTime(dateTimeValue) {
+  return new Date(dateTimeValue).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
 }
 
 function ClaimsTable({ admin, claims, emptyTitle, emptyMessage, onOpenClaim }) {
@@ -861,36 +930,38 @@ function ClaimsTable({ admin, claims, emptyTitle, emptyMessage, onOpenClaim }) {
   }
 
   return (
-    <Paper variant="outlined">
-      <Table>
+    <TableContainer component={Paper} variant="outlined">
+      <Table size="small">
         <TableHead>
-          <TableRow>
+          <TableRow sx={{ '& th': { fontWeight: 700, bgcolor: 'grey.50', whiteSpace: 'nowrap' } }}>
             <TableCell>Claim</TableCell>
             {admin && <TableCell>Claimant</TableCell>}
             <TableCell>Type</TableCell>
             <TableCell>Status</TableCell>
             <TableCell>Incident Date</TableCell>
-            <TableCell align="right">Action</TableCell>
+            <TableCell align="right">&nbsp;</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {claims.map((claim) => (
             <TableRow key={claim.id} hover>
-              <TableCell>{claim.claimNumber}</TableCell>
+              <TableCell>
+                <Typography fontWeight={700}>{claim.claimNumber}</Typography>
+              </TableCell>
               {admin && <TableCell>{claim.claimantName}</TableCell>}
-              <TableCell>{claim.claimType}</TableCell>
+              <TableCell>{formatClaimType(claim.claimType)}</TableCell>
               <TableCell>
                 <Chip size="small" label={statusLabels[claim.status]} color={statusColors[claim.status]} />
               </TableCell>
-              <TableCell>{claim.incidentDate}</TableCell>
+              <TableCell>{formatDate(claim.incidentDate)}</TableCell>
               <TableCell align="right">
-                <Button size="small" onClick={() => onOpenClaim(claim.id)}>Open</Button>
+                <Button size="small" endIcon={<ChevronRightIcon />} onClick={() => onOpenClaim(claim.id)}>View</Button>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-    </Paper>
+    </TableContainer>
   )
 }
 
