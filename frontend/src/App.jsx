@@ -18,6 +18,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -66,6 +67,15 @@ const statusLabels = {
   APPROVED: 'Approved',
   DENIED: 'Denied',
   CLOSED: 'Closed',
+}
+
+const metricColors = {
+  'Total Claims': 'primary.main',
+  Submitted: 'info.main',
+  'Under Review': 'warning.main',
+  Approved: 'success.main',
+  Denied: 'error.main',
+  Closed: 'grey.500',
 }
 
 const statusOptions = [
@@ -263,9 +273,9 @@ function App() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f6f8fb' }}>
-      <AppBar position="static" color="inherit" elevation={0} sx={{ borderBottom: '1px solid #dde3ea' }}>
-        <Toolbar sx={{ gap: 2 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6f8' }}>
+      <AppBar position="static" color="inherit" elevation={0} sx={{ borderBottom: '1px solid #dde3ea', bgcolor: '#ffffff' }}>
+        <Toolbar sx={{ gap: 2, minHeight: 72 }}>
           <AssignmentTurnedInIcon color="primary" />
           <Box sx={{ flexGrow: 1 }}>
             <Typography variant="h6" component="h1">Insurance Claims Portal</Typography>
@@ -289,25 +299,26 @@ function App() {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="xl" sx={{ py: 3 }}>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: '220px 1fr' },
+            gridTemplateColumns: { xs: '1fr', md: '260px 1fr' },
             gap: 3,
           }}
         >
           <Box>
-            <Paper variant="outlined" sx={{ p: 1 }}>
+            <Paper variant="outlined" sx={{ p: 1, bgcolor: '#ffffff' }}>
               <Stack spacing={1}>
                 {visibleNav.map((item) => (
                   <Button
                     key={item}
+                    disableRipple
                     fullWidth
                     variant={activeScreen === item ? 'contained' : 'text'}
                     onClick={() => setActiveScreen(item)}
                     startIcon={item.includes('Dashboard') ? <DashboardIcon /> : <DescriptionIcon />}
-                    sx={{ justifyContent: 'flex-start' }}
+                    sx={{ justifyContent: 'flex-start', whiteSpace: 'nowrap' }}
                   >
                     {item}
                   </Button>
@@ -369,7 +380,7 @@ function App() {
 
 function ScreenHeader({ activeScreen, role }) {
   return (
-    <Paper variant="outlined" sx={{ p: 3 }}>
+    <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 3 }, bgcolor: '#ffffff' }}>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'center' } }}>
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="h4" component="h2">{activeScreen}</Typography>
@@ -398,9 +409,17 @@ function LoadingState({ message }) {
 
 function EmptyState({ title, message }) {
   return (
-    <Paper variant="outlined" sx={{ p: 4 }}>
-      <Typography variant="h6">{title}</Typography>
-      <Typography color="text.secondary">{message}</Typography>
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 4,
+        bgcolor: '#fbfcfd',
+        borderStyle: 'dashed',
+        textAlign: 'center',
+      }}
+    >
+      <Typography variant="h6" gutterBottom>{title}</Typography>
+      <Typography color="text.secondary" sx={{ maxWidth: 520, mx: 'auto' }}>{message}</Typography>
     </Paper>
   )
 }
@@ -416,8 +435,8 @@ function SubmitClaimScreen({ onSubmitClaim, submitting }) {
   }
 
   return (
-    <Paper variant="outlined" sx={{ p: 3, maxWidth: 760 }} component="form" onSubmit={handleSubmit}>
-      <Stack spacing={2}>
+    <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 3 }, maxWidth: 860, bgcolor: '#ffffff' }} component="form" onSubmit={handleSubmit}>
+      <Stack spacing={2.5}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <FormControl fullWidth required>
             <InputLabel id="claim-type-label">Claim type</InputLabel>
@@ -453,7 +472,7 @@ function SubmitClaimScreen({ onSubmitClaim, submitting }) {
           onChange={(event) => setDescription(event.target.value)}
           placeholder="Briefly describe what happened and any immediate details the claims team should know."
         />
-        <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
           <Button type="submit" variant="contained" startIcon={<AssignmentTurnedInIcon />} disabled={submitting}>
             {submitting ? 'Submitting...' : 'Submit Claim'}
           </Button>
@@ -493,15 +512,15 @@ function ClaimDetailsScreen({ claim, history, documents, loading, onAddDocument,
       }}
     >
       <Box>
-        <Card variant="outlined">
+        <Card variant="outlined" sx={{ bgcolor: '#ffffff' }}>
           <CardContent>
-            <Stack spacing={2}>
+            <Stack spacing={2.5}>
               <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="h6">{claim.claimNumber}</Typography>
                 <Chip label={statusLabels[claim.status]} color={statusColors[claim.status]} />
               </Stack>
               <Typography color="text.secondary">
-                {claim.claimType} claim submitted by {claim.claimantName}
+                {formatClaimType(claim.claimType)} claim submitted by {claim.claimantName}
               </Typography>
               <Divider />
               <Typography>{claim.description}</Typography>
@@ -510,9 +529,9 @@ function ClaimDetailsScreen({ claim, history, documents, loading, onAddDocument,
         </Card>
       </Box>
       <Box>
-        <Card variant="outlined">
+        <Card variant="outlined" sx={{ bgcolor: '#ffffff' }}>
           <CardContent>
-            <Stack spacing={2}>
+            <Stack spacing={2.25}>
               <Typography variant="h6">Supporting Documents</Typography>
               <DocumentMetadataForm onAddDocument={onAddDocument} submitting={submitting} />
               <DocumentList documents={documents} />
@@ -547,8 +566,8 @@ function AdminDashboardScreen({ summary }) {
     >
       {metrics.map(([label, value]) => (
         <Box key={label}>
-          <Card variant="outlined">
-            <CardContent>
+          <Card variant="outlined" sx={{ height: '100%', borderTop: 4, borderTopColor: metricColors[label] ?? 'primary.main', bgcolor: '#ffffff' }}>
+            <CardContent sx={{ p: 2.5 }}>
               <Typography color="text.secondary">{label}</Typography>
               <Typography variant="h4">{value}</Typography>
             </CardContent>
@@ -577,14 +596,16 @@ function ClaimsReviewTableScreen({ claims, onOpenClaim }) {
 
   return (
     <Stack spacing={2}>
-      <TextField
-        fullWidth
-        label="Search claims"
-        placeholder="Search by claim number, claimant, or status"
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1 }} /> }}
-      />
+      <Paper variant="outlined" sx={{ p: 2, bgcolor: '#ffffff' }}>
+        <TextField
+          fullWidth
+          label="Search claims"
+          placeholder="Search by claim number, claimant, or status"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          slotProps={{ input: { startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} /> } }}
+        />
+      </Paper>
       <ClaimsTable
         admin
         claims={filteredClaims}
@@ -599,11 +620,13 @@ function ClaimsReviewTableScreen({ claims, onOpenClaim }) {
 function AdminClaimDetailScreen({ claim, history, documents, loading, onUpdateStatus, submitting }) {
   const [newStatus, setNewStatus] = useState('UNDER_REVIEW')
   const [note, setNote] = useState('')
+  const [noteTouched, setNoteTouched] = useState(false)
 
   useEffect(() => {
     if (claim) {
       setNewStatus(getDefaultNextStatus(claim.status))
       setNote('')
+      setNoteTouched(false)
     }
   }, [claim])
 
@@ -625,10 +648,11 @@ function AdminClaimDetailScreen({ claim, history, documents, loading, onUpdateSt
   const isClosed = claim.status === 'CLOSED'
   const isSubmittedRollback = newStatus === 'SUBMITTED' && claim.status !== 'SUBMITTED'
   const isMissingRequiredNote = noteRequired && note.trim().length === 0
+  const showMissingRequiredNote = isMissingRequiredNote && noteTouched
   const updateDisabled = submitting || isClosed || isSameStatus || isSubmittedRollback || isMissingRequiredNote
 
   return (
-    <Paper variant="outlined" sx={{ p: 3 }} component="form" onSubmit={handleSubmit}>
+    <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 3 }, bgcolor: '#ffffff' }} component="form" onSubmit={handleSubmit}>
       <Stack spacing={3}>
         <Box
           sx={{
@@ -642,7 +666,7 @@ function AdminClaimDetailScreen({ claim, history, documents, loading, onUpdateSt
               <Box>
                 <Typography variant="h6">{claim.claimNumber}</Typography>
                 <Typography color="text.secondary">
-                  {claim.claimantName} · {claim.claimType} · {claim.incidentDate}
+                  {claim.claimantName} · {formatClaimType(claim.claimType)} · {formatDate(claim.incidentDate)}
                 </Typography>
               </Box>
               <Chip label={statusLabels[claim.status]} color={statusColors[claim.status]} sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }} />
@@ -675,7 +699,10 @@ function AdminClaimDetailScreen({ claim, history, documents, loading, onUpdateSt
             labelId="status-label"
             label="New status"
             value={newStatus}
-            onChange={(event) => setNewStatus(event.target.value)}
+            onChange={(event) => {
+              setNewStatus(event.target.value)
+              setNoteTouched(false)
+            }}
           >
             {statusOptions.map((status) => (
               <MenuItem
@@ -694,15 +721,23 @@ function AdminClaimDetailScreen({ claim, history, documents, loading, onUpdateSt
           minRows={4}
           label="Reviewer note"
           value={note}
-          onChange={(event) => setNote(event.target.value)}
+          onBlur={() => setNoteTouched(true)}
+          onChange={(event) => {
+            setNote(event.target.value)
+            if (event.target.value.trim().length > 0) {
+              setNoteTouched(true)
+            }
+          }}
           placeholder="Add a short reason for this status update."
-          error={isMissingRequiredNote}
+          error={showMissingRequiredNote}
           helperText={noteRequired ? 'A reviewer note is required for Needs Info and Denied updates.' : 'Optional note for internal claim history.'}
           disabled={isClosed}
         />
-        <Button type="submit" variant="contained" startIcon={<FactCheckIcon />} disabled={updateDisabled}>
-          {submitting ? 'Updating...' : 'Update Status'}
-        </Button>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+          <Button type="submit" variant="contained" startIcon={<FactCheckIcon />} disabled={updateDisabled}>
+            {submitting ? 'Updating...' : 'Update Status'}
+          </Button>
+        </Box>
         <Divider />
         <Typography variant="h6">Supporting Documents</Typography>
         <DocumentList documents={documents} />
@@ -728,7 +763,7 @@ function DocumentMetadataForm({ onAddDocument, submitting }) {
   }
 
   return (
-    <Paper variant="outlined" sx={{ p: 2 }} component="form" onSubmit={handleSubmit}>
+    <Paper variant="outlined" sx={{ p: 2, bgcolor: '#fbfcfd' }} component="form" onSubmit={handleSubmit}>
       <Stack spacing={2}>
         <TextField
           required
@@ -759,9 +794,9 @@ function DocumentMetadataForm({ onAddDocument, submitting }) {
           label="Mock file URL"
           value={fileUrl}
           onChange={(event) => setFileUrl(event.target.value)}
-          helperText="Metadata only. No real file upload yet."
+          helperText="Metadata record only for MVP demo."
         />
-        <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
           <Button type="submit" variant="outlined" startIcon={<UploadFileIcon />} disabled={submitting}>
             {submitting ? 'Adding...' : 'Add Metadata'}
           </Button>
@@ -784,13 +819,13 @@ function DocumentList({ documents }) {
   return (
     <Stack spacing={1}>
       {documents.map((document) => (
-        <Paper key={document.id} variant="outlined" sx={{ p: 2 }}>
+        <Paper key={document.id} variant="outlined" sx={{ p: 2, bgcolor: '#ffffff' }}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'center' } }}>
             <InsertDriveFileIcon color="primary" />
             <Box sx={{ flexGrow: 1 }}>
               <Typography fontWeight={700}>{document.fileName}</Typography>
               <Typography variant="body2" color="text.secondary">
-                Uploaded {new Date(document.uploadedAt).toLocaleString()}
+                Uploaded {formatDateTime(document.uploadedAt)}
               </Typography>
               {document.fileUrl && (
                 <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
@@ -814,7 +849,7 @@ function HistoryList({ history }) {
   return (
     <Stack spacing={1}>
       {history.map((event) => (
-        <Paper key={event.id} variant="outlined" sx={{ p: 2, borderLeft: 4, borderLeftColor: 'primary.main' }}>
+        <Paper key={event.id} variant="outlined" sx={{ p: 2, borderLeft: 4, borderLeftColor: 'primary.main', bgcolor: '#ffffff' }}>
           <Stack spacing={1}>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
               {event.previousStatus && (
@@ -826,7 +861,7 @@ function HistoryList({ history }) {
               <Chip size="small" label={statusLabels[event.newStatus] || event.newStatus} color={statusColors[event.newStatus]} />
             </Stack>
             <Typography variant="body2" color="text.secondary">
-              {event.changedBy} · {new Date(event.createdAt).toLocaleString()}
+              {event.changedBy} · {formatDateTime(event.createdAt)}
             </Typography>
             {event.note && <Typography variant="body2">{event.note}</Typography>}
           </Stack>
@@ -855,16 +890,38 @@ function formatDocumentType(documentType) {
     .join(' ')
 }
 
+function formatClaimType(claimType) {
+  return claimType.charAt(0) + claimType.slice(1).toLowerCase()
+}
+
+function formatDate(dateValue) {
+  return new Date(`${dateValue}T00:00:00`).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+function formatDateTime(dateTimeValue) {
+  return new Date(dateTimeValue).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
 function ClaimsTable({ admin, claims, emptyTitle, emptyMessage, onOpenClaim }) {
   if (claims.length === 0) {
     return <EmptyState title={emptyTitle} message={emptyMessage} />
   }
 
   return (
-    <Paper variant="outlined">
+    <TableContainer component={Paper} variant="outlined" sx={{ bgcolor: '#ffffff' }}>
       <Table>
         <TableHead>
-          <TableRow>
+          <TableRow sx={{ bgcolor: '#f8fafc' }}>
             <TableCell>Claim</TableCell>
             {admin && <TableCell>Claimant</TableCell>}
             <TableCell>Type</TableCell>
@@ -876,21 +933,23 @@ function ClaimsTable({ admin, claims, emptyTitle, emptyMessage, onOpenClaim }) {
         <TableBody>
           {claims.map((claim) => (
             <TableRow key={claim.id} hover>
-              <TableCell>{claim.claimNumber}</TableCell>
+              <TableCell>
+                <Typography fontWeight={700}>{claim.claimNumber}</Typography>
+              </TableCell>
               {admin && <TableCell>{claim.claimantName}</TableCell>}
-              <TableCell>{claim.claimType}</TableCell>
+              <TableCell>{formatClaimType(claim.claimType)}</TableCell>
               <TableCell>
                 <Chip size="small" label={statusLabels[claim.status]} color={statusColors[claim.status]} />
               </TableCell>
-              <TableCell>{claim.incidentDate}</TableCell>
+              <TableCell>{formatDate(claim.incidentDate)}</TableCell>
               <TableCell align="right">
-                <Button size="small" onClick={() => onOpenClaim(claim.id)}>Open</Button>
+                <Button size="small" variant="outlined" onClick={() => onOpenClaim(claim.id)}>Open</Button>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-    </Paper>
+    </TableContainer>
   )
 }
 
