@@ -678,11 +678,11 @@ function AdminClaimDetailScreen({ claim, history, documents, loading, onUpdateSt
           <Card variant="outlined">
             <CardContent>
               <Typography variant="overline" color="text.secondary">Current Status</Typography>
-              <Stack spacing={1}>
-                <Chip label={statusLabels[claim.status]} color={statusColors[claim.status]} />
-                <Typography variant="body2" color="text.secondary">
-                  Status updates create a claim history entry for traceability.
-                </Typography>
+              <Stack spacing={1} sx={{ mt: 1 }}>
+                <MetaRow label="Status" value={<Chip size="small" label={statusLabels[claim.status]} color={statusColors[claim.status]} />} />
+                <MetaRow label="Submitted" value={formatDateTime(claim.submittedAt)} />
+                <MetaRow label="Last update" value={formatDateTime(claim.updatedAt)} />
+                <MetaRow label="Claimant" value={claim.claimantName} />
               </Stack>
             </CardContent>
           </Card>
@@ -882,6 +882,15 @@ function getDefaultNextStatus(currentStatus) {
   }
 
   return currentStatus
+}
+
+function MetaRow({ label, value }) {
+  return (
+    <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+      <Typography variant="body2" color="text.secondary">{label}</Typography>
+      <Box sx={{ fontWeight: 600, textAlign: 'right' }}>{value}</Box>
+    </Stack>
+  )
 }
 
 function formatDocumentType(documentType) {
