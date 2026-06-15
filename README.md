@@ -2,6 +2,12 @@
 
 A full-stack insurance claims workflow application built with Spring Boot, PostgreSQL, React, REST APIs, and Material UI to demonstrate enterprise workflow design, claim submission, admin review, status tracking, audit history, document metadata, and dashboard visibility.
 
+![Java](https://img.shields.io/badge/Java-21-blue)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)
+![React](https://img.shields.io/badge/React-19-61dafb)
+![Material UI](https://img.shields.io/badge/Material%20UI-7-007fff)
+
 ## Project Overview
 
 This project models a portfolio-sized insurance claims portal with two main experiences:
@@ -25,6 +31,36 @@ This MVP demonstrates:
 - Separation of claimant and admin experiences so each role sees the right tasks
 
 That makes the project relevant to Business Systems Analyst, Product Analyst, Solutions Analyst, Technology Analyst, Digital Transformation Analyst, and Risk Technology Analyst roles.
+
+## Screenshots
+
+### Admin Dashboard
+
+![Admin Dashboard](docs/screenshots/01-admin-dashboard.png)
+
+### Admin Claims Review Table
+
+![Admin Claims Review Table](docs/screenshots/02-admin-claims-review-table.png)
+
+### Admin Claim Detail / Status Update
+
+![Admin Claim Detail / Status Update](docs/screenshots/03-admin-claim-detail-status-update.png)
+
+### Claimant Claim Details
+
+![Claimant Claim Details](docs/screenshots/04-claimant-claim-details.png)
+
+### Claimant Submit Claim
+
+![Claimant Submit Claim](docs/screenshots/05-claimant-submit-claim.png)
+
+### Supporting Documents
+
+![Supporting Documents](docs/screenshots/06-supporting-documents.png)
+
+### Claim History / Audit Trail
+
+![Claim History / Audit Trail](docs/screenshots/07-claim-history-audit-trail.png)
 
 ## Features
 
@@ -164,29 +200,47 @@ curl http://localhost:8080/api/claims/1/documents
 
 ## Demo Script
 
-1. Open the React frontend.
+Use this walkthrough for a short portfolio demo:
+
+1. Open the React frontend at `http://127.0.0.1:5173`.
 2. Start as `Claimant/User`.
-3. Submit a new claim.
-4. Open `My Claims` and show the new claim.
-5. Open `Claim Details` and show status, history, and supporting document metadata.
-6. Switch to `Admin/Reviewer`.
-7. Open `Admin Dashboard` and show dashboard counts.
-8. Open `Claims Review Table`.
-9. Open a claim from the table.
-10. Change the claim status and add a reviewer note.
-11. Submit the status update.
-12. Show the refreshed status and claim history/audit trail.
+3. Open `Submit Claim` and explain the structured intake form.
+4. Open `Claim Details` and show claim status, supporting documents, and audit history.
+5. Switch to `Admin/Reviewer`.
+6. Open `Admin Dashboard` and explain the operational counts.
+7. Open `Claims Review Table` and point out search, status chips, and claimant context.
+8. Open `Admin Claim Detail`.
+9. Show the current status summary, submitted date, last update, claimant, next status dropdown, and reviewer note.
+10. Explain that status changes refresh the claim, dashboard counts, and audit trail.
 
 ## Screenshot Checklist
 
-- Claimant Submit Claim screen
-- Claimant My Claims table
-- Claim Details with history and document metadata
-- Admin Dashboard
-- Admin Claims Review Table
-- Admin Claim Detail / Update Status screen
-- Successful status update alert
-- Claim history showing reviewer note
+See [docs/screenshot-checklist.md](docs/screenshot-checklist.md) for the full portfolio capture checklist.
+
+## Planning Documentation
+
+- [User roles](docs/planning/user-roles.md)
+- [Core entities](docs/planning/entities.md)
+- [API endpoint plan](docs/planning/api-endpoints.md)
+- [UI screens](docs/planning/ui-screens.md)
+- [Architecture overview](docs/planning/architecture-overview.md)
+
+## Test Commands
+
+### Frontend
+
+```bash
+cd frontend
+npm run lint
+npm run build
+```
+
+### Backend
+
+```bash
+cd backend
+./mvnw test -q
+```
 
 ## MVP Limitations
 
@@ -207,7 +261,7 @@ curl http://localhost:8080/api/claims/1/documents
 - Add frontend integration tests
 - Add dashboard charts and operational reporting
 - Add deployment documentation
-- Add screenshots and a final portfolio case study writeup
+- Add a final portfolio case study writeup
 
 ## Portfolio Positioning
 
