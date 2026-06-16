@@ -1,9 +1,13 @@
 body {
   margin: 0;
   min-width: 320px;
-  background: #f6f8fb;
+  background: #eef2f6;
 }
 
 * {
   box-sizing: border-box;
+}
+
+a {
+  color: inherit;
 }

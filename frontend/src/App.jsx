@@ -1,13 +1,7 @@
 import {
   Alert,
-  AppBar,
   Box,
   Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Container,
   Divider,
   FormControl,
   InputLabel,
@@ -15,25 +9,17 @@ import {
   Paper,
   Select,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
-  Toolbar,
   Typography,
 } from '@mui/material'
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn'
-import ChevronRightIcon from '@mui/icons-material/ChevronRight'
-import DashboardIcon from '@mui/icons-material/Dashboard'
-import DescriptionIcon from '@mui/icons-material/Description'
-import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile'
+import ArticleIcon from '@mui/icons-material/Article'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import FactCheckIcon from '@mui/icons-material/FactCheck'
-import RefreshIcon from '@mui/icons-material/Refresh'
+import HelpCenterOutlinedIcon from '@mui/icons-material/HelpCenterOutlined'
+import HourglassTopIcon from '@mui/icons-material/HourglassTop'
+import ReportProblemIcon from '@mui/icons-material/ReportProblem'
 import SearchIcon from '@mui/icons-material/Search'
-import UploadFileIcon from '@mui/icons-material/UploadFile'
 import { useEffect, useMemo, useState } from 'react'
 import {
   addClaimDocument,
@@ -46,47 +32,31 @@ import {
   getUsers,
   updateClaimStatus,
 } from './services/api'
+import {
+  formatClaimType,
+  formatDate,
+  formatDateTime,
+  getDefaultNextStatus,
+  metricColors,
+  statusLabels,
+  statusOptions,
+} from './claimDisplay'
+import { ClaimSummaryCard, MetaRow } from './components/claims/ClaimSummaryCard'
+import { ClaimsTable } from './components/claims/ClaimsTable'
+import { DocumentsPanel } from './components/claims/DocumentsPanel'
+import { HistoryPanel } from './components/claims/HistoryPanel'
+import { PageHeader } from './components/layout/PageHeader'
+import { PortalShell } from './components/layout/PortalShell'
+import { EmptyState } from './components/ui/EmptyState'
+import { LoadingState } from './components/ui/LoadingState'
+import { MainCard } from './components/ui/MainCard'
+import { MetricCard } from './components/ui/MetricCard'
+import { StatusChip } from './components/ui/StatusChip'
 
 const navByRole = {
   CLAIMANT: ['Submit Claim', 'My Claims', 'Claim Details'],
   ADMIN: ['Admin Dashboard', 'Claims Review Table', 'Admin Claim Detail'],
 }
-
-const statusColors = {
-  SUBMITTED: 'info',
-  UNDER_REVIEW: 'warning',
-  NEEDS_INFO: 'secondary',
-  APPROVED: 'success',
-  DENIED: 'error',
-  CLOSED: 'default',
-}
-
-const statusLabels = {
-  SUBMITTED: 'Submitted',
-  UNDER_REVIEW: 'Under Review',
-  NEEDS_INFO: 'Needs Info',
-  APPROVED: 'Approved',
-  DENIED: 'Denied',
-  CLOSED: 'Closed',
-}
-
-const metricColors = {
-  'Total Claims': 'primary.main',
-  Submitted: 'info.main',
-  'Under Review': 'warning.main',
-  'Needs Info': 'secondary.main',
-  Approved: 'success.main',
-  Denied: 'error.main',
-}
-
-const statusOptions = [
-  'SUBMITTED',
-  'UNDER_REVIEW',
-  'NEEDS_INFO',
-  'APPROVED',
-  'DENIED',
-  'CLOSED',
-]
 
 function App() {
   const [role, setRole] = useState('CLAIMANT')
@@ -182,11 +152,21 @@ function App() {
   }, [selectedClaimId])
 
   const changeRole = (nextRole) => {
+    setError('')
+    setSuccessMessage('')
     setRole(nextRole)
     setActiveScreen(navByRole[nextRole][0])
   }
 
+  const handleNavigate = (screen) => {
+    setError('')
+    setSuccessMessage('')
+    setActiveScreen(screen)
+  }
+
   const handleOpenClaim = (claimId, targetScreen) => {
+    setError('')
+    setSuccessMessage('')
     setSelectedClaimId(claimId)
     setActiveScreen(targetScreen)
   }
@@ -274,154 +254,56 @@ function App() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6f8' }}>
-      <AppBar position="static" color="inherit" elevation={0} sx={{ borderBottom: '1px solid #dde3ea', bgcolor: '#ffffff' }}>
-        <Toolbar sx={{ gap: 2, minHeight: 72 }}>
-          <AssignmentTurnedInIcon color="primary" />
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h6" component="h1">Insurance Claims Portal</Typography>
-            <Typography variant="body2" color="text.secondary">MVP enterprise claims workflow</Typography>
-          </Box>
-          <Button variant="outlined" startIcon={<RefreshIcon />} onClick={loadOverviewData}>
-            Refresh
-          </Button>
-          <FormControl size="small" sx={{ minWidth: 180 }}>
-            <InputLabel id="role-switcher-label">Role</InputLabel>
-            <Select
-              labelId="role-switcher-label"
-              label="Role"
-              value={role}
-              onChange={(event) => changeRole(event.target.value)}
-            >
-              <MenuItem value="CLAIMANT">Claimant/User</MenuItem>
-              <MenuItem value="ADMIN">Admin/Reviewer</MenuItem>
-            </Select>
-          </FormControl>
-        </Toolbar>
-      </AppBar>
-
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: '260px 1fr' },
-            gap: 3,
-          }}
-        >
-          <Box>
-            <Paper variant="outlined" sx={{ p: 1, bgcolor: '#ffffff' }}>
-              <Stack spacing={1}>
-                {visibleNav.map((item) => (
-                  <Button
-                    key={item}
-                    disableRipple
-                    fullWidth
-                    variant={activeScreen === item ? 'contained' : 'text'}
-                    onClick={() => setActiveScreen(item)}
-                    startIcon={item.includes('Dashboard') ? <DashboardIcon /> : <DescriptionIcon />}
-                    sx={{ justifyContent: 'flex-start', whiteSpace: 'nowrap' }}
-                  >
-                    {item}
-                  </Button>
-                ))}
-              </Stack>
-            </Paper>
-          </Box>
-
-          <Box>
-            <Stack spacing={3}>
-              <ScreenHeader activeScreen={activeScreen} role={role} />
-              {error && <Alert severity="error">{error}</Alert>}
-              {successMessage && <Alert severity="success">{successMessage}</Alert>}
-              {loading ? (
-                <LoadingState message="Loading live claims data..." />
-              ) : (
-                <>
-                  {activeScreen === 'Submit Claim' && (
-                    <SubmitClaimScreen onSubmitClaim={handleSubmitClaim} submitting={submitting} />
-                  )}
-                  {activeScreen === 'My Claims' && (
-                    <MyClaimsScreen claims={claimantClaims} onOpenClaim={handleOpenClaim} />
-                  )}
-                  {activeScreen === 'Claim Details' && (
-                    <ClaimDetailsScreen
-                      claim={selectedClaim}
-                      history={claimHistory}
-                      documents={claimDocuments}
-                      loading={detailsLoading}
-                      onAddDocument={handleAddDocument}
-                      submitting={submitting}
-                    />
-                  )}
-                  {activeScreen === 'Admin Dashboard' && (
-                    <AdminDashboardScreen summary={dashboardSummary} />
-                  )}
-                  {activeScreen === 'Claims Review Table' && (
-                    <ClaimsReviewTableScreen claims={claims} onOpenClaim={handleOpenClaim} />
-                  )}
-                  {activeScreen === 'Admin Claim Detail' && (
-                    <AdminClaimDetailScreen
-                      claim={selectedClaim}
-                      history={claimHistory}
-                      documents={claimDocuments}
-                      loading={detailsLoading}
-                      onUpdateStatus={handleUpdateStatus}
-                      submitting={submitting}
-                    />
-                  )}
-                </>
-              )}
-            </Stack>
-          </Box>
-        </Box>
-      </Container>
-    </Box>
-  )
-}
-
-function ScreenHeader({ activeScreen, role }) {
-  return (
-    <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 3 }, bgcolor: '#ffffff' }}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'center' } }}>
-        <Box sx={{ flexGrow: 1 }}>
-          <Typography variant="h4" component="h2">{activeScreen}</Typography>
-          <Typography color="text.secondary">
-            {role === 'CLAIMANT'
-              ? 'Claimant self-service view for submission and status tracking.'
-              : 'Claims operations view for review, filtering, and status updates.'}
-          </Typography>
-        </Box>
-        <Chip label={role} color={role === 'ADMIN' ? 'secondary' : 'primary'} />
-      </Stack>
-    </Paper>
-  )
-}
-
-function LoadingState({ message }) {
-  return (
-    <Paper variant="outlined" sx={{ p: 4 }}>
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <CircularProgress size={24} />
-        <Typography>{message}</Typography>
-      </Stack>
-    </Paper>
-  )
-}
-
-function EmptyState({ title, message }) {
-  return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 4,
-        bgcolor: '#fbfcfd',
-        borderStyle: 'dashed',
-        textAlign: 'center',
-      }}
+    <PortalShell
+      activeScreen={activeScreen}
+      navItems={visibleNav}
+      onChangeRole={changeRole}
+      onNavigate={handleNavigate}
+      onRefresh={loadOverviewData}
+      role={role}
     >
-      <Typography variant="h6" gutterBottom>{title}</Typography>
-      <Typography color="text.secondary" sx={{ maxWidth: 520, mx: 'auto' }}>{message}</Typography>
-    </Paper>
+      <Stack spacing={2.5}>
+        <PageHeader activeScreen={activeScreen} role={role} />
+        {error && <Alert severity="error">{error}</Alert>}
+        {successMessage && <Alert severity="success">{successMessage}</Alert>}
+        {loading ? (
+          <LoadingState message="Loading live claims data..." />
+        ) : (
+          <>
+            {activeScreen === 'Submit Claim' && (
+              <SubmitClaimScreen onSubmitClaim={handleSubmitClaim} submitting={submitting} />
+            )}
+            {activeScreen === 'My Claims' && (
+              <MyClaimsScreen claims={claimantClaims} onOpenClaim={handleOpenClaim} />
+            )}
+            {activeScreen === 'Claim Details' && (
+              <ClaimDetailsScreen
+                claim={selectedClaim}
+                history={claimHistory}
+                documents={claimDocuments}
+                loading={detailsLoading}
+                onAddDocument={handleAddDocument}
+                submitting={submitting}
+              />
+            )}
+            {activeScreen === 'Admin Dashboard' && <AdminDashboardScreen claims={claims} summary={dashboardSummary} />}
+            {activeScreen === 'Claims Review Table' && (
+              <ClaimsReviewTableScreen claims={claims} onOpenClaim={handleOpenClaim} />
+            )}
+            {activeScreen === 'Admin Claim Detail' && (
+              <AdminClaimDetailScreen
+                claim={selectedClaim}
+                history={claimHistory}
+                documents={claimDocuments}
+                loading={detailsLoading}
+                onUpdateStatus={handleUpdateStatus}
+                submitting={submitting}
+              />
+            )}
+          </>
+        )}
+      </Stack>
+    </PortalShell>
   )
 }
 
@@ -436,9 +318,19 @@ function SubmitClaimScreen({ onSubmitClaim, submitting }) {
   }
 
   return (
-    <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 3 }, maxWidth: 860, bgcolor: '#ffffff' }} component="form" onSubmit={handleSubmit}>
-      <Stack spacing={2.5}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+    <MainCard
+      title="New Claim Intake"
+      subtitle="Capture the core claim details needed to start the workflow."
+      sx={{ maxWidth: 900 }}
+    >
+      <Stack spacing={2.5} component="form" onSubmit={handleSubmit}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+            gap: 2,
+          }}
+        >
           <FormControl fullWidth required>
             <InputLabel id="claim-type-label">Claim type</InputLabel>
             <Select
@@ -462,12 +354,12 @@ function SubmitClaimScreen({ onSubmitClaim, submitting }) {
             onChange={(event) => setIncidentDate(event.target.value)}
             slotProps={{ inputLabel: { shrink: true } }}
           />
-        </Stack>
+        </Box>
         <TextField
           fullWidth
           required
           multiline
-          minRows={5}
+          minRows={6}
           label="Description"
           value={description}
           onChange={(event) => setDescription(event.target.value)}
@@ -479,7 +371,7 @@ function SubmitClaimScreen({ onSubmitClaim, submitting }) {
           </Button>
         </Box>
       </Stack>
-    </Paper>
+    </MainCard>
   )
 }
 
@@ -508,74 +400,86 @@ function ClaimDetailsScreen({ claim, history, documents, loading, onAddDocument,
     <Box
       sx={{
         display: 'grid',
-        gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 7fr) minmax(280px, 5fr)' },
-        gap: 3,
+        gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.15fr) minmax(320px, 0.85fr)' },
+        gap: 2.5,
       }}
     >
-      <Box>
-        <Card variant="outlined" sx={{ bgcolor: '#ffffff' }}>
-          <CardContent>
-            <Stack spacing={2.5}>
-              <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-                <Typography variant="h6">{claim.claimNumber}</Typography>
-                <Chip label={statusLabels[claim.status]} color={statusColors[claim.status]} />
-              </Stack>
-              <Typography color="text.secondary">
-                {formatClaimType(claim.claimType)} claim submitted by {claim.claimantName}
-              </Typography>
-              <Divider />
-              <Typography>{claim.description}</Typography>
-            </Stack>
-          </CardContent>
-        </Card>
-      </Box>
-      <Box>
-        <Card variant="outlined" sx={{ bgcolor: '#ffffff' }}>
-          <CardContent>
-            <Stack spacing={2.25}>
-              <Typography variant="h6">Supporting Documents</Typography>
-              <DocumentMetadataForm onAddDocument={onAddDocument} submitting={submitting} />
-              <DocumentList documents={documents} />
-              <Divider />
-              <Typography variant="h6">Claim History</Typography>
-              <HistoryList history={history} />
-            </Stack>
-          </CardContent>
-        </Card>
-      </Box>
+      <Stack spacing={2.5}>
+        <ClaimSummaryCard claim={claim} />
+        <HistoryPanel history={history} />
+      </Stack>
+      <DocumentsPanel documents={documents} onAddDocument={onAddDocument} showForm submitting={submitting} />
     </Box>
   )
 }
 
-function AdminDashboardScreen({ summary }) {
+function AdminDashboardScreen({ claims, summary }) {
   const metrics = [
-    ['Total Claims', summary?.totalClaims ?? 0],
-    ['Submitted', summary?.submittedClaims ?? 0],
-    ['Under Review', summary?.underReviewClaims ?? 0],
-    ['Needs Info', summary?.needsInfoClaims ?? 0],
-    ['Approved', summary?.approvedClaims ?? 0],
-    ['Denied', summary?.deniedClaims ?? 0],
+    ['Total Claims', summary?.totalClaims ?? 0, <ArticleIcon />],
+    ['Submitted', summary?.submittedClaims ?? 0, <AssignmentTurnedInIcon />],
+    ['Under Review', summary?.underReviewClaims ?? 0, <HourglassTopIcon />],
+    ['Needs Info', summary?.needsInfoClaims ?? 0, <HelpCenterOutlinedIcon />],
+    ['Approved', summary?.approvedClaims ?? 0, <CheckCircleIcon />],
+    ['Denied', summary?.deniedClaims ?? 0, <ReportProblemIcon />],
   ]
+  const reviewQueuePreview = [...claims]
+    .filter((claim) => claim.status !== 'CLOSED')
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+    .slice(0, 5)
 
   return (
-    <Box
-      sx={{
-        display: 'grid',
-        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-        gap: 2,
-      }}
-    >
-      {metrics.map(([label, value]) => (
-        <Box key={label}>
-          <Card variant="outlined" sx={{ height: '100%', borderTop: 4, borderTopColor: metricColors[label] ?? 'primary.main', bgcolor: '#ffffff' }}>
-            <CardContent sx={{ p: 2.5 }}>
-              <Typography color="text.secondary">{label}</Typography>
-              <Typography variant="h4">{value}</Typography>
-            </CardContent>
-          </Card>
-        </Box>
-      ))}
-    </Box>
+    <Stack spacing={2.5}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
+          gap: 2,
+        }}
+      >
+        {metrics.map(([label, value, icon]) => (
+          <MetricCard key={label} label={label} value={value} color={metricColors[label]} icon={icon} />
+        ))}
+      </Box>
+      <ReviewQueuePreview claims={reviewQueuePreview} />
+    </Stack>
+  )
+}
+
+function ReviewQueuePreview({ claims }) {
+  return (
+    <MainCard title="Review Queue Preview" subtitle="Recent non-closed claims already loaded for admin review.">
+      {claims.length === 0 ? (
+        <EmptyState
+          title="No active claims"
+          message="Submitted and in-review claims will appear here when they need attention."
+        />
+      ) : (
+        <Stack spacing={1.25}>
+          {claims.map((claim) => (
+            <Paper
+              key={claim.id}
+              variant="outlined"
+              sx={{
+                p: 2,
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '1fr auto' },
+                gap: 1.5,
+                alignItems: 'center',
+                bgcolor: '#ffffff',
+              }}
+            >
+              <Box sx={{ minWidth: 0 }}>
+                <Typography fontWeight={800}>{claim.claimNumber}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {claim.claimantName} · {formatClaimType(claim.claimType)} · Updated {formatDateTime(claim.updatedAt)}
+                </Typography>
+              </Box>
+              <StatusChip status={claim.status} />
+            </Paper>
+          ))}
+        </Stack>
+      )}
+    </MainCard>
   )
 }
 
@@ -587,17 +491,17 @@ function ClaimsReviewTableScreen({ claims, onOpenClaim }) {
       return true
     }
 
-    return [
-      claim.claimNumber,
-      claim.claimantName,
-      claim.claimType,
-      claim.status,
-    ].some((value) => value.toLowerCase().includes(normalizedSearch))
+    return [claim.claimNumber, claim.claimantName, claim.claimType, claim.status].some((value) =>
+      value.toLowerCase().includes(normalizedSearch),
+    )
   })
 
   return (
     <Stack spacing={2}>
-      <Paper variant="outlined" sx={{ p: 2, bgcolor: '#ffffff' }}>
+      <MainCard
+        title="Review Queue"
+        subtitle="Search live claim records by claim number, claimant, type, or status."
+      >
         <TextField
           fullWidth
           label="Search claims"
@@ -606,7 +510,7 @@ function ClaimsReviewTableScreen({ claims, onOpenClaim }) {
           onChange={(event) => setSearch(event.target.value)}
           slotProps={{ input: { startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} /> } }}
         />
-      </Paper>
+      </MainCard>
       <ClaimsTable
         admin
         claims={filteredClaims}
@@ -653,313 +557,96 @@ function AdminClaimDetailScreen({ claim, history, documents, loading, onUpdateSt
   const updateDisabled = submitting || isClosed || isSameStatus || isSubmittedRollback || isMissingRequiredNote
 
   return (
-    <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 3 }, bgcolor: '#ffffff' }} component="form" onSubmit={handleSubmit}>
-      <Stack spacing={3}>
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) 280px' },
-            gap: 3,
-          }}
-        >
-          <Stack spacing={2}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ gap: 2, justifyContent: 'space-between' }}>
-              <Box>
-                <Typography variant="h6">{claim.claimNumber}</Typography>
-                <Typography color="text.secondary">
-                  {claim.claimantName} · {formatClaimType(claim.claimType)} · {formatDate(claim.incidentDate)}
-                </Typography>
-              </Box>
-              <Chip label={statusLabels[claim.status]} color={statusColors[claim.status]} sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }} />
-            </Stack>
-            <Typography>{claim.description}</Typography>
-          </Stack>
-
-          <Card variant="outlined">
-            <CardContent>
-              <Typography variant="overline" color="text.secondary">Current Status</Typography>
-              <Stack spacing={1} sx={{ mt: 1 }}>
-                <MetaRow label="Status" value={<Chip size="small" label={statusLabels[claim.status]} color={statusColors[claim.status]} />} />
-                <MetaRow label="Submitted" value={formatDateTime(claim.submittedAt)} />
-                <MetaRow label="Last update" value={formatDateTime(claim.updatedAt)} />
-                <MetaRow label="Claimant" value={claim.claimantName} />
-              </Stack>
-            </CardContent>
-          </Card>
-        </Box>
-
-        <Divider />
-
-        {isClosed && (
-          <Alert severity="info">This claim is closed. Further status updates are intentionally disabled for the MVP.</Alert>
-        )}
-
-        <FormControl fullWidth disabled={isClosed}>
-          <InputLabel id="status-label">New status</InputLabel>
-          <Select
-            labelId="status-label"
-            label="New status"
-            value={newStatus}
-            onChange={(event) => {
-              setNewStatus(event.target.value)
-              setNoteTouched(false)
-            }}
-          >
-            {statusOptions.map((status) => (
-              <MenuItem
-                key={status}
-                value={status}
-                disabled={status === claim.status || (status === 'SUBMITTED' && claim.status !== 'SUBMITTED')}
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.15fr) minmax(320px, 0.85fr)' },
+        gap: 2.5,
+      }}
+    >
+      <Stack spacing={2.5}>
+        <ClaimSummaryCard claim={claim} title="Claim Review Summary" />
+        <MainCard title="Status Update" subtitle="Change the claim status and record reviewer context.">
+          <Stack spacing={2.5} component="form" onSubmit={handleSubmit}>
+            {isClosed && (
+              <Alert severity="info">
+                This claim is closed. Further status updates are intentionally disabled for the MVP.
+              </Alert>
+            )}
+            <FormControl fullWidth disabled={isClosed}>
+              <InputLabel id="status-label">New status</InputLabel>
+              <Select
+                labelId="status-label"
+                label="New status"
+                value={newStatus}
+                onChange={(event) => {
+                  setNewStatus(event.target.value)
+                  setNoteTouched(false)
+                }}
               >
-                {statusLabels[status]}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <TextField
-          required={noteRequired}
-          multiline
-          minRows={4}
-          label="Reviewer note"
-          value={note}
-          onBlur={() => setNoteTouched(true)}
-          onChange={(event) => {
-            setNote(event.target.value)
-            if (event.target.value.trim().length > 0) {
-              setNoteTouched(true)
-            }
-          }}
-          placeholder="Add a short reason for this status update."
-          error={showMissingRequiredNote}
-          helperText={noteRequired ? 'A reviewer note is required for Needs Info and Denied updates.' : 'Optional note for internal claim history.'}
-          disabled={isClosed}
-        />
-        <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-          <Button type="submit" variant="contained" startIcon={<FactCheckIcon />} disabled={updateDisabled}>
-            {submitting ? 'Updating...' : 'Update Status'}
-          </Button>
-        </Box>
-        <Divider />
-        <Typography variant="h6">Supporting Documents</Typography>
-        <DocumentList documents={documents} />
-        <Divider />
-        <Typography variant="h6">Claim History</Typography>
-        <HistoryList history={history} />
-      </Stack>
-    </Paper>
-  )
-}
-
-function DocumentMetadataForm({ onAddDocument, submitting }) {
-  const [fileName, setFileName] = useState('')
-  const [documentType, setDocumentType] = useState('PHOTO')
-  const [fileUrl, setFileUrl] = useState('https://example.com/mock-claim-document')
-
-  const handleSubmit = (event) => {
-    event.preventDefault()
-    onAddDocument({ fileName, documentType, fileUrl })
-    setFileName('')
-    setDocumentType('PHOTO')
-    setFileUrl('https://example.com/mock-claim-document')
-  }
-
-  return (
-    <Paper variant="outlined" sx={{ p: 2, bgcolor: '#fbfcfd' }} component="form" onSubmit={handleSubmit}>
-      <Stack spacing={2}>
-        <TextField
-          required
-          size="small"
-          label="Document name"
-          value={fileName}
-          onChange={(event) => setFileName(event.target.value)}
-          placeholder="repair-estimate.pdf"
-        />
-        <FormControl fullWidth size="small" required>
-          <InputLabel id="document-type-label">Document type</InputLabel>
-          <Select
-            labelId="document-type-label"
-            label="Document type"
-            value={documentType}
-            onChange={(event) => setDocumentType(event.target.value)}
-          >
-            <MenuItem value="PHOTO">Photo</MenuItem>
-            <MenuItem value="RECEIPT">Receipt</MenuItem>
-            <MenuItem value="REPAIR_ESTIMATE">Repair Estimate</MenuItem>
-            <MenuItem value="POLICE_REPORT">Police Report</MenuItem>
-            <MenuItem value="OTHER">Other</MenuItem>
-          </Select>
-        </FormControl>
-        <TextField
-          required
-          size="small"
-          label="Mock file URL"
-          value={fileUrl}
-          onChange={(event) => setFileUrl(event.target.value)}
-          helperText="Metadata record only for MVP demo."
-        />
-        <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-          <Button type="submit" variant="outlined" startIcon={<UploadFileIcon />} disabled={submitting}>
-            {submitting ? 'Adding...' : 'Add Metadata'}
-          </Button>
-        </Box>
-      </Stack>
-    </Paper>
-  )
-}
-
-function DocumentList({ documents }) {
-  if (documents.length === 0) {
-    return (
-      <EmptyState
-        title="No documents yet"
-        message="Supporting documents will appear here as metadata records. Real file upload is intentionally out of scope for this MVP."
-      />
-    )
-  }
-
-  return (
-    <Stack spacing={1}>
-      {documents.map((document) => (
-        <Paper key={document.id} variant="outlined" sx={{ p: 2, bgcolor: '#ffffff' }}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'center' } }}>
-            <InsertDriveFileIcon color="primary" />
-            <Box sx={{ flexGrow: 1 }}>
-              <Typography fontWeight={700}>{document.fileName}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Uploaded {formatDateTime(document.uploadedAt)}
-              </Typography>
-              {document.fileUrl && (
-                <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
-                  {document.fileUrl}
-                </Typography>
-              )}
+                {statusOptions.map((status) => (
+                  <MenuItem
+                    key={status}
+                    value={status}
+                    disabled={status === claim.status || (status === 'SUBMITTED' && claim.status !== 'SUBMITTED')}
+                  >
+                    {statusLabels[status]}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <TextField
+              required={noteRequired}
+              multiline
+              minRows={5}
+              label="Reviewer note"
+              value={note}
+              onBlur={() => setNoteTouched(true)}
+              onChange={(event) => {
+                setNote(event.target.value)
+                if (event.target.value.trim().length > 0) {
+                  setNoteTouched(true)
+                }
+              }}
+              placeholder="Add a short reason for this status update."
+              error={showMissingRequiredNote}
+              helperText={
+                noteRequired
+                  ? 'A reviewer note is required for Needs Info and Denied updates.'
+                  : 'Optional note for internal claim history.'
+              }
+              disabled={isClosed}
+            />
+            <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+              <Button type="submit" variant="contained" startIcon={<FactCheckIcon />} disabled={updateDisabled}>
+                {submitting ? 'Updating...' : 'Update Status'}
+              </Button>
             </Box>
-            <Chip size="small" label={formatDocumentType(document.documentType)} variant="outlined" />
           </Stack>
-        </Paper>
-      ))}
-    </Stack>
+        </MainCard>
+        <HistoryPanel history={history} />
+      </Stack>
+      <Stack spacing={2.5}>
+        <CurrentStatusCard claim={claim} />
+        <DocumentsPanel documents={documents} />
+      </Stack>
+    </Box>
   )
 }
 
-function HistoryList({ history }) {
-  if (history.length === 0) {
-    return <EmptyState title="No history yet" message="Status updates will appear here as the claim moves through review." />
-  }
-
+function CurrentStatusCard({ claim }) {
   return (
-    <Stack spacing={1}>
-      {history.map((event) => (
-        <Paper key={event.id} variant="outlined" sx={{ p: 2, borderLeft: 4, borderLeftColor: 'primary.main', bgcolor: '#ffffff' }}>
-          <Stack spacing={1}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
-              {event.previousStatus && (
-                <>
-                  <Chip size="small" label={statusLabels[event.previousStatus] || event.previousStatus} color={statusColors[event.previousStatus]} variant="outlined" />
-                  <Typography variant="body2" color="text.secondary">to</Typography>
-                </>
-              )}
-              <Chip size="small" label={statusLabels[event.newStatus] || event.newStatus} color={statusColors[event.newStatus]} />
-            </Stack>
-            <Typography variant="body2" color="text.secondary">
-              {event.changedBy} · {formatDateTime(event.createdAt)}
-            </Typography>
-            {event.note && <Typography variant="body2">{event.note}</Typography>}
-          </Stack>
-        </Paper>
-      ))}
-    </Stack>
-  )
-}
-
-function getDefaultNextStatus(currentStatus) {
-  if (currentStatus === 'SUBMITTED') {
-    return 'UNDER_REVIEW'
-  }
-
-  if (currentStatus === 'CLOSED') {
-    return 'CLOSED'
-  }
-
-  return currentStatus
-}
-
-function MetaRow({ label, value }) {
-  return (
-    <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-      <Typography variant="body2" color="text.secondary">{label}</Typography>
-      <Box sx={{ fontWeight: 600, textAlign: 'right' }}>{value}</Box>
-    </Stack>
-  )
-}
-
-function formatDocumentType(documentType) {
-  return documentType
-    .split('_')
-    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
-    .join(' ')
-}
-
-function formatClaimType(claimType) {
-  return claimType.charAt(0) + claimType.slice(1).toLowerCase()
-}
-
-function formatDate(dateValue) {
-  return new Date(`${dateValue}T00:00:00`).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-}
-
-function formatDateTime(dateTimeValue) {
-  return new Date(dateTimeValue).toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
-}
-
-function ClaimsTable({ admin, claims, emptyTitle, emptyMessage, onOpenClaim }) {
-  if (claims.length === 0) {
-    return <EmptyState title={emptyTitle} message={emptyMessage} />
-  }
-
-  return (
-    <TableContainer component={Paper} variant="outlined" sx={{ bgcolor: '#ffffff' }}>
-      <Table>
-        <TableHead>
-          <TableRow sx={{ bgcolor: '#f8fafc' }}>
-            <TableCell sx={{ fontWeight: 700 }}>Claim</TableCell>
-            {admin && <TableCell sx={{ fontWeight: 700 }}>Claimant</TableCell>}
-            <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Incident Date</TableCell>
-            <TableCell align="right" sx={{ fontWeight: 700 }}>Action</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {claims.map((claim) => (
-            <TableRow key={claim.id} hover>
-              <TableCell>
-                <Typography fontWeight={700}>{claim.claimNumber}</Typography>
-              </TableCell>
-              {admin && <TableCell>{claim.claimantName}</TableCell>}
-              <TableCell>{formatClaimType(claim.claimType)}</TableCell>
-              <TableCell>
-                <Chip size="small" label={statusLabels[claim.status]} color={statusColors[claim.status]} />
-              </TableCell>
-              <TableCell>{formatDate(claim.incidentDate)}</TableCell>
-              <TableCell align="right">
-                <Button size="small" variant="outlined" endIcon={<ChevronRightIcon />} onClick={() => onOpenClaim(claim.id)}>View</Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+    <MainCard title="Current Status" subtitle="Operational snapshot for the selected claim.">
+      <Stack spacing={1.5}>
+        <MetaRow label="Status" value={<StatusChip status={claim.status} />} />
+        <Divider />
+        <MetaRow label="Submitted" value={formatDateTime(claim.submittedAt)} />
+        <MetaRow label="Last update" value={formatDateTime(claim.updatedAt)} />
+        <MetaRow label="Claimant" value={claim.claimantName} />
+        <MetaRow label="Claim type" value={formatClaimType(claim.claimType)} />
+        <MetaRow label="Incident" value={formatDate(claim.incidentDate)} />
+      </Stack>
+    </MainCard>
   )
 }
 
