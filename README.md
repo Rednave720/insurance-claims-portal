@@ -190,6 +190,76 @@ Frontend runs at:
 http://127.0.0.1:5173
 ```
 
+## Docker Compose Setup
+
+This project also includes a local Docker Compose setup for development and portfolio demos. It runs the React frontend, Spring Boot backend, and PostgreSQL database together without replacing the manual local setup above.
+
+### Prerequisite
+
+- Docker Desktop
+
+### Start The Full Stack
+
+```bash
+docker compose up --build
+```
+
+Open the frontend at:
+
+```text
+http://localhost:5173
+```
+
+The backend API is available at:
+
+```text
+http://localhost:8080
+```
+
+PostgreSQL is exposed locally on:
+
+```text
+localhost:5432
+```
+
+### Stop Containers
+
+```bash
+docker compose down
+```
+
+### Reset The Docker Database
+
+Use this when you want to remove the persisted PostgreSQL volume and reseed demo data on the next startup:
+
+```bash
+docker compose down -v
+```
+
+### Docker Environment Notes
+
+The Compose setup uses development-safe defaults:
+
+```text
+POSTGRES_DB=insurance_claims
+POSTGRES_USER=claims_app
+POSTGRES_PASSWORD=claims_app_dev_password
+```
+
+The backend connects to PostgreSQL inside Docker with:
+
+```text
+DB_URL=jdbc:postgresql://postgres:5432/insurance_claims
+```
+
+The frontend calls the backend through the browser-accessible URL:
+
+```text
+VITE_API_BASE_URL=http://localhost:8080
+```
+
+This Docker configuration is intended for local development and demonstration. It is not production deployment infrastructure.
+
 ## Useful Local API Checks
 
 ```bash
