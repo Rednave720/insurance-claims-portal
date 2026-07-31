@@ -17,6 +17,8 @@ This project models a portfolio-sized insurance claims portal with two main expe
 
 The goal is not to build a production insurance platform. The goal is to show business systems thinking, enterprise workflow awareness, API/database credibility, and practical technical execution.
 
+Portfolio case study: [Insurance Claims Management Portal](https://home-amber-five.vercel.app/work/insurance-claims-management-portal)
+
 ## Why This Project Matters
 
 Insurance claims are workflow-heavy business processes. A real enterprise claims system needs structured intake, review visibility, status tracking, supporting documentation, and a reliable audit trail.
@@ -36,31 +38,31 @@ That makes the project relevant to Business Systems Analyst, Product Analyst, So
 
 ### Admin Dashboard
 
-![Admin Dashboard](docs/screenshots/01-admin-dashboard.png)
+![Admin Dashboard](docs/screenshots/berry-reskin/01-admin-dashboard.png)
 
 ### Admin Claims Review Table
 
-![Admin Claims Review Table](docs/screenshots/02-admin-claims-review-table.png)
+![Admin Claims Review Table](docs/screenshots/berry-reskin/02-admin-claims-review-table.png)
 
 ### Admin Claim Detail / Status Update
 
-![Admin Claim Detail / Status Update](docs/screenshots/03-admin-claim-detail-status-update.png)
+![Admin Claim Detail / Status Update](docs/screenshots/berry-reskin/03-admin-claim-detail-status-update.png)
 
 ### Claimant Claim Details
 
-![Claimant Claim Details](docs/screenshots/04-claimant-claim-details.png)
+![Claimant Claim Details](docs/screenshots/berry-reskin/04-claimant-claim-details.png)
 
 ### Claimant Submit Claim
 
-![Claimant Submit Claim](docs/screenshots/05-claimant-submit-claim.png)
+![Claimant Submit Claim](docs/screenshots/berry-reskin/05-claimant-submit-claim.png)
 
 ### Supporting Documents
 
-![Supporting Documents](docs/screenshots/06-supporting-documents.png)
+![Supporting Documents](docs/screenshots/berry-reskin/06-supporting-documents.png)
 
 ### Claim History / Audit Trail
 
-![Claim History / Audit Trail](docs/screenshots/07-claim-history-audit-trail.png)
+![Claim History / Audit Trail](docs/screenshots/berry-reskin/07-claim-history-audit-trail.png)
 
 ## Features
 
@@ -261,7 +263,6 @@ cd backend
 - Add frontend integration tests
 - Add dashboard charts and operational reporting
 - Add deployment documentation
-- Add a final portfolio case study writeup
 
 ## Portfolio Positioning
 
